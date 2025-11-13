@@ -225,7 +225,7 @@ export function showCellTooltip(x, y, z, event, game, isUserRequestedHelp) {
 
   let content;
   if (!currentRootData) {
-    content = `<div style="font-family: 'IBM Plex Mono', monospace;">(${x},${y},${z})<br><span style="font-style: italic;">Run AI analysis first</span></div>`;
+    content = `<div style="font-family: 'IBM Plex Mono', monospace;">(${x},${y},${z})<br><span style="font-style: italic;">Run AI first</span></div>`;
   } else {
     const idx = toIdx(x, y, z);
     const child = currentRootData.children.get(idx);

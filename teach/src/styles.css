@@ -5,8 +5,49 @@
   --text: #1D1D20;
   --muted: #6e7781;
   --accent: #0969da;
+  --accent-lite: rgba(9, 105, 218, 0.08);
+  --accent-shadow: rgba(9, 105, 218, 0.15);
   --border: #d0d7de;
   --grid: #d8dee4;
+  --hero-bg-overlay: rgba(255, 255, 255, 0.5);
+  --start-overlay-bg: rgba(255, 255, 255, 0.9);
+  --game-over-bg: rgba(0, 0, 0, 0.7);
+  --spinner-bg: #f3f3f3;
+  --spinner-accent: #3498db;
+  --canvas-bg: #fff;
+  --button-secondary-bg: #f6f8fa;
+  --table-header-bg: #f0f3f6;
+  --qubic-btn-bg: #000;
+  --qubic-btn-text: #fff;
+  --qubic-btn-hover: #333;
+  --tooltip-bg: white;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #1a1a1a;
+    --panel: #2d2d2d;
+    --text: #e0e0e0;
+    --muted: #a0a0a0;
+    --accent: #0969da;
+    --accent-lite: rgba(9, 105, 218, 0.12);
+    --accent-shadow: rgba(74, 158, 255, 0.15);
+    --border: #404040;
+    --grid: #404040;
+    --hero-bg-overlay: rgba(0, 0, 0, 0.5);
+    --start-overlay-bg: rgba(0, 0, 0, 0.9);
+    --game-over-bg: rgba(255, 255, 255, 0.1);
+    --spinner-bg: #404040;
+    --spinner-accent: #4a9eff;
+    --canvas-bg: #2d2d2d;
+    --button-secondary-bg: #404040;
+    --ai-status-bg: #4a9eff22;
+    --table-header-bg: #333333;
+    --qubic-btn-bg: #e0e0e0;
+    --qubic-btn-text: #000;
+    --qubic-btn-hover: #cccccc;
+    --tooltip-bg: #2d2d2d;
+  }
 }
 
 /* ===== Global Styles ===== */
@@ -92,11 +133,19 @@ body {
 }
 
 .hero-content {
-  position: relative;
-  z-index: 1;
-  padding: 60px 80px;
-  background: rgba(255, 255, 255, 0.5);
-  border-radius: 100%;
+    position: relative;
+    z-index: 1;
+    width: 800px;
+    height: 800px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: var(--hero-bg-overlay);
+    border-radius: 50%;
+    backdrop-filter: blur(10px);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.15), 0 0 60px rgba(0, 0, 0, 0.2);
+    mask-image: radial-gradient(circle, black 0%, transparent 55%, transparent 100%);
 }
 
 #hero h1 {
@@ -119,7 +168,7 @@ body {
     filter: brightness(1.2) drop-shadow(0 0 0 rgba(9, 105, 218, 0));
   }
   to {
-    filter: brightness(1.4) drop-shadow(0 0 8px rgba(9, 105, 218, 0.15));
+    filter: brightness(1.4) drop-shadow(0 0 8px var(--accent-shadow));
   }
 }
 
@@ -160,7 +209,7 @@ main {
 #startOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--start-overlay-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -192,7 +241,7 @@ main {
 #gameOverOverlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: var(--game-over-bg);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -206,7 +255,7 @@ main {
 }
 
 #restartGame {
-  background: #f6f8fa;
+  background: var(--button-secondary-bg);
   color: var(--text);
   border: 1px solid var(--border);
   border-radius: 0;
@@ -221,8 +270,8 @@ main {
 
 /* ===== Loading Spinner ===== */
 .spinner {
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #3498db;
+  border: 2px solid var(--spinner-bg);
+  border-top: 2px solid var(--spinner-accent);
   border-radius: 50%;
   width: 16px;
   height: 16px;
@@ -253,7 +302,7 @@ canvas.board {
   display: block;
   width: 400px;
   height: 400px;
-  background: #fff;
+  background: var(--canvas-bg);
   border-radius: 0;
   border: 1px solid var(--border);
 }
@@ -324,7 +373,8 @@ button:active {
 /* ===== AI Status Badge ===== */
 #aiStatus {
   font-size: 14px;
-  background: #0969da11;
+  /* use a lighter accent background for the AI status badge when available, fall back to existing vars */
+  background: var(--accent-lite, var(--ai-status-bg, var(--accent)));
   color: var(--text);
   border-radius: 0;
   display: flex;
@@ -351,7 +401,7 @@ button:active {
   display: flex;
   align-items: center;
   font-weight: 600;
-  color: #0969da;
+  color: var(--text);
 }
 
 /* ===== Parameters Section ===== */
@@ -397,7 +447,7 @@ td {
 }
 
 th {
-  background: #f0f3f6;
+  background: var(--table-header-bg);
   font-weight: 600;
 }
 
@@ -612,10 +662,10 @@ td:first-child {
 
 .qubic-controls button {
   padding: 8px;
-  background: #000;
+  background: var(--qubic-btn-bg);
   border: none;
   border-radius: 4px;
-  color: #fff;
+  color: var(--qubic-btn-text);
   font-size: 16px;
   font-weight: 500;
   cursor: pointer;
@@ -625,7 +675,7 @@ td:first-child {
 }
 
 .qubic-controls button:hover {
-  background: #333;
+  background: var(--qubic-btn-hover);
   transform: scale(1.02);
 }
 
@@ -643,7 +693,7 @@ td:first-child {
 /* ===== Cell Tooltip ===== */
 .cell-tooltip {
   position: fixed;
-  background: white;
+  background: var(--tooltip-bg);
   color: var(--text);
   padding: 8px 12px;
   font-size: 12px;
