@@ -21,9 +21,6 @@
   
   <!-- Styles -->
   <link rel="stylesheet" href="./src/styles.css" />
-
-  <!-- 3D Animation -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 </head>
 
 <body>
@@ -163,9 +160,11 @@
   <script type="module">
     import { init } from './src/app.js';
     import { initQubicAnimation } from './src/qubic-animation.js';
+    import { initHeroAnimation } from './src/hero-animation.js';
     
     init();
     initQubicAnimation();
+    initHeroAnimation();
   </script>
 </body>
 

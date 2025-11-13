@@ -1,3 +1,5 @@
+import * as THREE from 'three';
+
 /**
  * 3D Qubic Animation
  * Displays an interactive 4x4x4 cube with animated winning lines
@@ -15,11 +17,6 @@ export function initQubicAnimation() {
         const container = document.getElementById('qubic-animation');
         if (!container) {
             console.error('qubic-animation container not found');
-            return;
-        }
-        
-        if (typeof THREE === 'undefined') {
-            console.error('THREE.js not loaded');
             return;
         }
         
