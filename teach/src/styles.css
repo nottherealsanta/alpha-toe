@@ -323,9 +323,6 @@ button:active {
 
 /* ===== AI Status Badge ===== */
 #aiStatus {
-  position: absolute;
-  bottom: 12px;
-  right: 12px;
   font-size: 14px;
   background: #0969da11;
   color: var(--text);
@@ -334,7 +331,7 @@ button:active {
   align-items: center;
   gap: 8px;
   min-width: 140px;
-  height: 36px;
+  height: 40px;
 }
 
 #aiLabel {
