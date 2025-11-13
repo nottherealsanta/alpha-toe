@@ -82,7 +82,13 @@ body {
 
 .tile.x::before,
 .tile.o::before {
-  opacity: 0.4;
+  animation: fadeIn 1s ease-in-out forwards;
+}
+
+@keyframes fadeIn {
+  to {
+    opacity: 0.4;
+  }
 }
 
 .hero-content {
