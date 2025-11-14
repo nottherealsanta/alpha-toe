@@ -10,7 +10,7 @@
   --border: #d0d7de;
   --grid: #d8dee4;
   --hero-bg-overlay: rgba(255, 255, 255, 0.5);
-  --start-overlay-bg: rgba(255, 255, 255, 0.9);
+  --start-overlay-bg: rgba(255, 255, 255, 0.7);
   --game-over-bg: rgba(0, 0, 0, 0.7);
   --spinner-bg: #f3f3f3;
   --spinner-accent: #3498db;
@@ -400,7 +400,7 @@ button:active {
   text-align: left;
   display: flex;
   align-items: center;
-  font-weight: 600;
+  font-weight: 400;
   color: var(--text);
 }
 
@@ -486,7 +486,7 @@ td:first-child {
 
 #qubic-game-board h2 {
   font-size: 3rem;
-  font-weight: 700;
+  font-weight: 500;
   margin: 0 0 20px 0;
   color: var(--text);
 }
@@ -566,7 +566,7 @@ td:first-child {
 #components h2 {
   font-size: 3rem;
   font-weight: 800;
-  margin: 0 0 80px 0;
+  margin: 80px 0 120px 0;
   color: var(--text);
 }
 
