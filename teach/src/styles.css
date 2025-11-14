@@ -582,7 +582,7 @@ td:first-child {
   display: flex;
   flex-direction: row;
   align-items: center;
-  gap: 30px;
+  gap: 150px;
   padding: 5px 0;
   border: none;
 }
