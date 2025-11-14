@@ -234,28 +234,50 @@ function startMCTSTraversal(svg) {
     img.parentNode.replaceChild(svg, img);
     
     // Start animations only when SVG enters viewport
+
+    function resetAndPlay() {
+      // Clear the board state - reset opacity of moves and arrows to initial values
+      svg.querySelectorAll('.move').forEach(el => {
+        el.style.opacity = '0';
+        el.style.transform = 'scale(0.3)';
+      });
+      svg.querySelectorAll('.arrow').forEach(el => {
+        el.style.opacity = '0';
+        el.style.strokeDashoffset = '80';
+      });
+      
+      // Force animation reset by completely removing animation then restoring it
+      svg.querySelectorAll('.move, .arrow, .loop-arrow, .agent').forEach(el => {
+        // Remove all animation-related inline styles
+        el.style.animation = 'none';
+        el.style.animationPlayState = '';
+      });
+      
+      // Force reflow to apply the "none" state
+      svg.offsetHeight;
+      
+      // Restore animations by removing the inline override
+      svg.querySelectorAll('.move, .arrow, .loop-arrow, .agent').forEach(el => {
+        el.style.animation = '';
+      });
+
+      // After the configured run time (keep previous 30s), pause and then restart.
+      setTimeout(() => {
+        svg.querySelectorAll('.move, .arrow, .loop-arrow, .agent').forEach(el => {
+          el.style.animationPlayState = 'paused';
+        });
+
+        // short gap then restart animations again to loop forever
+        setTimeout(() => {
+          resetAndPlay();
+        }, 600);
+      }, 30000);
+    }
+
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
-          // Reset all animations to start from beginning
-          svg.querySelectorAll('.move, .arrow, .loop-arrow, .agent').forEach(el => {
-            el.style.animation = 'none';
-            el.offsetHeight; // Trigger reflow
-            el.style.animation = null;
-          });
-          
-          // Resume all animations (include moving agent)
-          svg.querySelectorAll('.move, .arrow, .loop-arrow, .agent').forEach(el => {
-            el.style.animationPlayState = 'running';
-          });
-          
-          // Stop animations after 2 complete cycles (30 seconds = 2 × 15s cycle)
-          setTimeout(() => {
-            svg.querySelectorAll('.move, .arrow, .loop-arrow, .agent').forEach(el => {
-              el.style.animationPlayState = 'paused';
-            });
-          }, 30000);
-          
+          resetAndPlay();
           observer.unobserve(svg);
         }
       });
