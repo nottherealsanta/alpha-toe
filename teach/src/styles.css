@@ -596,13 +596,13 @@ td:first-child {
 
 .card-image {
   flex: 0 0 auto;
-  width: 500px;
-  height: 500px;
+  width: 450px;
+  height: 450px;
   background: var(--panel);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: 30px;
+  padding: 20px;
   font-size: 2rem;
   color: var(--accent);
 }
@@ -626,7 +626,7 @@ td:first-child {
 .info-card p {
   color: var(--muted);
   line-height: 1.8;
-  font-size: 1.25rem;
+  font-size: 1.35rem;
   margin: 0;
   font-weight: 400;
 }
