@@ -24,6 +24,10 @@
   
   <!-- Styles -->
   <link rel="stylesheet" href="./src/styles.css" />
+
+  <!-- Thebe -->
+  <link rel="stylesheet" href="https://unpkg.com/thebe@latest/dist/thebe.css" />
+  <script type="text/javascript" src="https://unpkg.com/thebe@latest/lib/index.js"></script>
 </head>
 
 <body>
@@ -154,10 +158,20 @@
           </div>
        </div>
      </section>
+
+     <section id="thebe-section" class="snap-section">
+      <div class="section-content">
+        <h2>Try it yourself</h2>
+        <p>You can run the code yourself. Click the button below to activate the code cells.</p>
+        <div class="thebe-activate"></div>
+        <div class="thebe-status"></div>
+        <pre data-executable="true" data-language="python">print("hello")</pre>
+      </div>
+    </section>
    </main>
 
   <!-- Load application modules -->
-  <script type="module">
+  <!-- <script type="module">
     import { init } from './src/app.js';
     import { initQubicAnimation } from './src/qubic-animation.js';
     import { initHeroAnimation } from './src/hero-animation.js';
@@ -165,6 +179,23 @@
     init();
     initQubicAnimation();
     initHeroAnimation();
+  </script> -->
+  <script type="text/x-thebe-config">
+    {
+        "useBinder": false,
+        "useJupyterLite": false,
+        "serverSettings": {
+            "baseUrl": "http://localhost:8888",
+            "token": "test-secret",
+            "appendToken": true
+        },
+        "kernelOptions": {
+            "name": "python",
+            "kernelName": "python"
+        },
+        "mountActivateWidget": true,
+        "mountStatusWidget": true
+    }
   </script>
 </body>
 

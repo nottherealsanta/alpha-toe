@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 60 280 200" width="100%" height="200" role="img" aria-hidden="true">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="40 100 240 130" width="100%" height="200" role="img" aria-hidden="true">
   <style>
     :root{
       --accent-svg: var(--accent, #0969da);
       --muted-svg: var(--text, #1D1D20);
       --self-play-svg: var(--accent, #0969da);
+      --x-svg: var(--accent, #0969da);
+      --o-svg: var(--antiaccent, #DA7A09);
     }
     
     /* AI agent (circle) moves between positions */
@@ -35,7 +37,7 @@
     .move{transform-box:fill-box;transform-origin:center;opacity:0;}
     @keyframes appear{from{opacity:0;transform:scale(0.3)}to{opacity:1;transform:scale(1)}}
     .move-x{stroke:var(--self-play-svg);stroke-width:2.4;stroke-linecap:round;fill:none;}
-    .move-o{fill:none;stroke:var(--muted-svg);stroke-width:2.4;}
+    .move-o{fill:none;stroke:var(--o-svg);stroke-width:2.4;}
     
     /* Staggered move appearances */
     .m1{animation:appear 400ms ease-out forwards;animation-delay:0.5s;}
@@ -46,7 +48,7 @@
     .m6{animation:appear 400ms ease-out forwards;animation-delay:15.0s;}
     
     /* Arrows showing turn flow */
-    .arrow{fill:none;stroke:var(--self-play-svg);stroke-width:1.8;opacity:0;stroke-dasharray:80;stroke-dashoffset:80;marker-end:url(#arrowhead);}
+    .arrow{fill:none;stroke:var(--muted-svg);stroke-width:1.8;opacity:0;stroke-dasharray:80;stroke-dashoffset:80;marker-end:url(#arrowhead);}
     @keyframes drawArrow{to{stroke-dashoffset:0;opacity:0.7}}
     @keyframes fadeArrow{to{opacity:0}}
     .a1{animation:drawArrow 400ms ease forwards, fadeArrow 300ms ease forwards;animation-delay:0.0s,0.6s;}
@@ -59,7 +61,7 @@
   
   <defs>
     <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
-      <path d="M1 1 L7 4 L1 7" fill="none" stroke="var(--self-play-svg)" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M1 1 L7 4 L1 7" fill="none" stroke="var(--muted-svg)" stroke-width="1.5" stroke-linejoin="round"/>
     </marker>
   </defs>
   
