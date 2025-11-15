@@ -49,7 +49,7 @@ export function animateStroke(path, duration = 900, emphasis = true) {
 
     // Initial prune (do not animate yet)
     const allPaths = Array.from(svg.querySelectorAll('path'));
-    const keepProbability = 0.5;
+    const keepProbability = 0.65;
     const kept = [];
     allPaths.forEach(p => {
       if (Math.random() > keepProbability) { p.remove(); return; }
