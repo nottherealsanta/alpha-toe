@@ -33,7 +33,7 @@ export function initHeroAnimation() {
  */
 function startHeroAnimation() {
     const tiles = document.querySelectorAll('.tile');
-    const targetFillPercentage = 0.35; // 35% of tiles should be filled
+    const targetFillPercentage = 0.25; // 35% of tiles should be filled
     const targetCount = Math.floor(tiles.length * targetFillPercentage);
 
     const animate = () => {
