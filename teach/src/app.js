@@ -21,6 +21,7 @@ let model = new ONNXAlphaZero();
 let lastRoot = null;
 let startPlayer = null;
 let isUserRequestedHelp = false;
+let modelReady = false; // track if model loaded so buttons still work when it fails
 
 // Canvas setup
 const canvases = [0, 1, 2, 3].map(i => document.getElementById(`board${i}`));
@@ -30,6 +31,7 @@ const ctxs = canvases.map(c => c.getContext("2d"));
  * Run MCTS once
  */
 async function runMCTSOnce(userRequested = false) {
+  if (!modelReady) return; // skip if model not available
   const sims = 1000;
   const cpuct = 1.0;
   const eps = 0.0;
@@ -46,6 +48,7 @@ async function runMCTSOnce(userRequested = false) {
  * AI makes a move
  */
 async function aiMove() {
+  if (!modelReady) return; // cannot make AI move without model
   startThinkingAnimation();
   await runMCTSOnce();
   stopThinkingAnimation();
@@ -290,23 +293,31 @@ export async function init() {
      startHeroAnimation();
    }
 
-   // Load model
-  const ok = await model.load("./assets/model_4x4x4.onnx");
-  if (!ok) {
-    alert("Cannot load/run the 4×4×4 ONNX in this browser. Try Chrome/Edge with WebGPU enabled (chrome://flags → WebGPU), or export a 2D-only model.");
-    return;
-  }
-  
-  // Setup event handlers
+  // Setup event handlers early so start buttons always work
   setupEventHandlers();
-  
-  // Show start choice
+
+  // Show start choice immediately
   const startPromise = showStartChoice();
+
+  // Begin loading model in parallel (do not block button usage)
+  try {
+    const ok = await model.load("./assets/model_4x4x4.onnx");
+    modelReady = ok;
+    if (!ok) {
+      // Non-blocking: user can still play manually
+      console.warn("Model failed to load; continuing without AI.");
+    }
+  } catch (e) {
+    modelReady = false;
+    console.warn("Model exception during load; continuing without AI.", e);
+  }
+
+  // Wait for user selection
   await startPromise;
   game.player = startPlayer;
   
-  // AI moves first if selected
-  if (startPlayer === -1) {
+  // AI moves first if selected and model ready
+  if (startPlayer === -1 && modelReady) {
     await aiMove();
   }
 }

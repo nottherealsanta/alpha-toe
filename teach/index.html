@@ -171,15 +171,17 @@
    </main>
 
   <!-- Load application modules -->
-  <!-- <script type="module">
+  <script type="module">
     import { init } from './src/app.js';
     import { initQubicAnimation } from './src/qubic-animation.js';
     import { initHeroAnimation } from './src/hero-animation.js';
     import './src/components-animation.js';
-    init();
-    initQubicAnimation();
-    initHeroAnimation();
-  </script> -->
+    // Start animations immediately
+    await initQubicAnimation();
+    await initHeroAnimation();
+    // Now, initialize the main application logic
+    await init();
+  </script>
   <script type="text/x-thebe-config">
     {
         "useBinder": false,
