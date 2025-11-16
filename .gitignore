@@ -14,3 +14,5 @@ models_4x4x4/
 
 node_modules
 GEMINI.md
+.DS_Store
+teach/pages/
