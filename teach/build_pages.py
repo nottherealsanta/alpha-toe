@@ -20,145 +20,283 @@ def convert_notebook_to_html(notebook_path, output_dir, output_file):
     )
 
 
-def add_thebe_to_html(html_path):
-    """Modify the HTML to integrate Thebe for interactive code execution."""
+def add_thebe_core_to_html(html_path):
+    """Modify the HTML to integrate Thebe Core for interactive code execution."""
     with open(html_path, "r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "html.parser")
 
-    # Remove all style tags to avoid conflicts with the main stylesheet
+    # Remove all style tags to avoid conflicts
     for style_tag in soup.find_all("style"):
         style_tag.decompose()
 
-    # Add Google Fonts preconnect and stylesheet links (Inter + Roboto Mono)
-    soup.head.append(soup.new_tag("link", rel="preconnect", href="https://fonts.googleapis.com"))
-    soup.head.append(soup.new_tag("link", rel="preconnect", href="https://fonts.gstatic.com", crossorigin=True))
-    # Use Inter for UI text and Roboto Mono for code blocks as reliable Google Fonts
+    # Add Google Fonts
+    soup.head.append(
+        soup.new_tag("link", rel="preconnect", href="https://fonts.googleapis.com")
+    )
+    soup.head.append(
+        soup.new_tag(
+            "link", rel="preconnect", href="https://fonts.gstatic.com", crossorigin=True
+        )
+    )
     gf_href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&display=swap"
     soup.head.append(soup.new_tag("link", href=gf_href, rel="stylesheet"))
 
-    # Add CodeMirror and Thebe CSS
-    soup.head.append(soup.new_tag("link", rel="stylesheet", href="https://unpkg.com/codemirror@5.65.16/lib/codemirror.css"))
-    soup.head.append(soup.new_tag("link", rel="stylesheet", href="https://unpkg.com/thebe@latest/dist/thebe.css"))
+    # Add RequireJS for Jupyter widget support
+    require_script = soup.new_tag(
+        "script",
+        type="text/javascript",
+        src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js",
+    )
+    soup.head.append(require_script)
 
-    # Add Thebe JS
-    soup.head.append(soup.new_tag("script", type="text/javascript", src="https://unpkg.com/thebe@latest/lib/index.js"))
+    # Add CodeMirror for code editing (loaded after thebe-core)
+    codemirror_css = soup.new_tag(
+        "link",
+        rel="stylesheet",
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css",
+    )
+    soup.head.append(codemirror_css)
 
-    # Add Thebe config
-    # Remove any existing Thebe config script tags to avoid leftover JS functions
-    for old_cfg in soup.find_all('script', attrs={'type': 'text/x-thebe-config'}):
-        old_cfg.decompose()
+    codemirror_theme_css = soup.new_tag(
+        "link",
+        rel="stylesheet",
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/darcula.min.css",
+    )
+    soup.head.append(codemirror_theme_css)
 
-    config_script = soup.new_tag('script', type='text/x-thebe-config')
-    config_script.string = '''{
-    "bootstrap": false,
-    "useBinder": false,
-    "useJupyterLite": false,
-    "requestKernel": true,
-    "serverSettings": {
-        "baseUrl": "http://localhost:8888",
-        "token": "test-secret",
-        "appendToken": true
-    },
-    "kernelOptions": {
-        "name": "python",
-        "kernelName": "python"
-    },
-    "mountActivateWidget": true,
-    "mountStatusWidget": true,
-    "mountRunButton": true,
-    "mountRunAllButton": false,
-    "mountRestartButton": false,
-    "mountRestartAllButton": false,
-    "codeMirrorConfig": {
-        "theme": "default",
-        "lineNumbers": false,
-        "readOnly": false,
-        "styleActiveLine": false,
-        "matchBrackets": false,
-        "autoRefresh": false
-    }
-}'''
-    soup.body.append(config_script)
+    # Wrap code blocks in thebe-compatible structure
+    cell_counter = 0
+    for pre in soup.find_all("pre"):
+        if (
+            pre.parent
+            and pre.parent.name == "div"
+            and "highlight" in pre.parent.get("class", [])
+        ):
+            cell_id = f"cell-{cell_counter}"
+            cell_counter += 1
 
-    # Add helper scripts for buttons and run-cell handling
-    button_script = soup.new_tag("script")
-    button_script.string = '''(function() {
-    function adjustPreHeights() {
-        try {
-            document.querySelectorAll('pre[data-executable]').forEach(function(el) {
-                var h = el.getBoundingClientRect().height;
-                if (h) el.style.minHeight = h + 'px';
-            });
-        } catch (e) {
-            console.warn('adjustPreHeights error', e);
-        }
-    }
-    // Run now and on DOMContentLoaded
-    adjustPreHeights();
-    document.addEventListener('DOMContentLoaded', adjustPreHeights);
+            # Create wrapper div
+            cell_wrapper = soup.new_tag("div")
+            cell_wrapper["class"] = "thebe-cell"
+            cell_wrapper["data-cell-id"] = cell_id
 
-    var restartBtn = document.getElementById('restart-kernel');
-    if (restartBtn) {
-        restartBtn.addEventListener('click', function() {
-            if (window.thebe && typeof window.thebe.restart === 'function') {
-                window.thebe.restart();
-            }
-        });
-    }
-    document.addEventListener('click', function(e) {
-        var target = e.target || e.srcElement;
-        if (target && target.classList && target.classList.contains('run-cell')) {
-            if (window.thebe) {
-                var pre = target.nextElementSibling;
-                if (pre && pre.tagName === 'PRE') {
-                    window.thebe.runCell(pre);
-                }
-            }
-        }
-    });
-})();'''
-    soup.body.append(button_script)
+            # Create source container
+            source_container = soup.new_tag("div")
+            source_container["class"] = "thebe-source"
+            source_container["data-thebe-source"] = ""
 
-    # Mark code blocks as executable by Thebe
-    for pre in soup.find_all('pre'):
-        if pre.parent and pre.parent.name == 'div' and 'highlight' in pre.parent.get('class', []):
-            pre['data-executable'] = 'true'
-            pre['data-language'] = 'python'
+            # Create output container
+            output_container = soup.new_tag("div")
+            output_container["class"] = "thebe-output"
 
-    # Inject CSS to set the code editor font to Roboto Mono and UI font to Inter
-    style_tag = soup.new_tag('style')
+            # Extract code content
+            code_content = pre.get_text()
+
+            # Create pre element for source
+            source_pre = soup.new_tag("pre")
+            source_pre.string = code_content
+            source_container.append(source_pre)
+
+            # Add run button
+            run_button = soup.new_tag("button")
+            run_button["class"] = "cell-run-button"
+            run_button.string = "Run"
+            source_container.append(run_button)
+
+            # Assemble the cell
+            cell_wrapper.append(source_container)
+            cell_wrapper.append(output_container)
+
+            # Replace original structure
+            pre.parent.replace_with(cell_wrapper)
+
+    # Font and base styling
+    style_tag = soup.new_tag("style")
     style_tag.string = """
-pre, code, .thebe pre, .cm-s-default, .CodeMirror, .CodeMirror pre {
+/* Font settings */
+pre, code, .thebe-source pre, .cm-editor, .cm-content {
     font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace !important;
     font-size: 14px;
-    line-height: 1.4;
+    line-height: 1.5;
 }
 
-body, .thebe-page-container, .notebook, .container, .body {
+body, .notebook, .container {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
+}
+
+/* Thebe cell structure */
+.thebe-cell {
+    margin: 1.5rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.thebe-source {
+    position: relative;
+    margin-bottom: 0;
+}
+
+.thebe-editor {
+    position: relative;
+}
+
+.thebe-source pre {
+    margin: 0;
+    padding: 1rem;
+    border-radius: 8px 8px 0 0;
+    overflow-x: auto;
+}
+
+.thebe-output {
+    padding: 0.75rem 1rem;
+    border-radius: 0 0 8px 8px;
+    min-height: 0;
+}
+
+.thebe-output:empty {
+    display: none;
+}
+
+.thebe-output.thebe-output-has-content {
+    display: block;
+    border-top: 1px solid var(--muted);
+}
+
+/* Controls styling */
+.thebe-controls {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    gap: 10px;
+    z-index: 1000;
+    background: var(--bg);
+    padding: 10px;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.thebe-controls button {
+    padding: 0.5rem 1rem;
+    border: 1px solid var(--muted);
+    background: var(--bg);
+    color: var(--fg);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s;
+}
+
+.thebe-controls button:hover {
+    background: var(--code-bg);
+}
+
+.thebe-controls button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.thebe-status {
+    padding: 0.5rem 1rem;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.thebe-status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ccc;
+}
+
+.thebe-status-indicator.connected {
+    background: #4caf50;
+}
+
+.thebe-status-indicator.connecting {
+    background: #ff9800;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* CodeMirror editor styling */
+.cm-editor {
+    border-radius: 8px 8px 0 0;
+}
+
+.cm-scroller {
+    overflow: auto;
+}
+
+.cm-gutters {
+    border-radius: 8px 0 0 0;
+}
+
+/* Run button for each cell */
+.cell-run-button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    padding: 0.25rem 0.75rem;
+    background: var(--link);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    opacity: 1;
+    transition: opacity 0.2s;
+}
+
+.thebe-cell:hover .cell-run-button {
+    opacity: 1;
+}
+
+.cell-run-button:hover {
+    opacity: 0.9;
+}
+
+/* CodeMirror editor styling */
+.thebe-editor {
+    position: relative;
+}
+
+.thebe-editor .CodeMirror {
+    border-radius: 8px 8px 0 0;
+    font-family: 'Roboto Mono', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.thebe-editor .CodeMirror-gutters {
+    border-radius: 8px 0 0 0;
 }
 """
     soup.head.append(style_tag)
 
-    # Inject page margins and responsive container styles
-    page_style = soup.new_tag('style')
+    # Page layout
+    page_style = soup.new_tag("style")
     page_style.string = """
-/* Left-aligned page layout */
 body {
     padding-left: 0;
     padding-right: 24px;
     box-sizing: border-box;
-    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
-/* Keep main content left-aligned and allow it to grow */
-.thebe-page-container, .notebook, .container, .body {
+.notebook, .container {
     max-width: none;
     margin-left: 0;
     margin-right: auto;
 }
 
-/* Small left gutter on narrow viewports, larger right gutter preserved */
 @media (max-width: 600px) {
     body {
         padding-left: 12px;
@@ -175,10 +313,9 @@ body {
 """
     soup.head.append(page_style)
 
-    # Inject dark theme variables and system-theme detector
-    theme_style = soup.new_tag('style')
+    # Theme variables
+    theme_style = soup.new_tag("style")
     theme_style.string = """
-/* Color variables for light (default) and dark themes */
 :root {
     --bg: #ffffff;
     --fg: #111111;
@@ -186,29 +323,45 @@ body {
     --code-bg: #f5f5f7;
     --link: #0b63d6;
 }
-.theme-dark, .theme-dark body {
+
+.theme-dark {
     --bg: #0b0b0f;
     --fg: #e6e6e6;
     --muted: #9b9b9b;
     --code-bg: #0f1113;
     --link: #6ea8ff;
 }
+
 body {
     background: var(--bg) !important;
     color: var(--fg) !important;
     transition: background .2s ease, color .2s ease;
 }
-pre, code, .thebe pre, .CodeMirror, .CodeMirror pre {
+
+pre, code, .thebe-source pre, .thebe-output {
     background: var(--code-bg) !important;
     color: var(--fg) !important;
 }
-a { color: var(--link); }
+
+a { 
+    color: var(--link); 
+}
+
+.cm-editor {
+    background: var(--code-bg) !important;
+    color: var(--fg) !important;
+}
+
+.cm-gutters {
+    background: var(--code-bg) !important;
+    border-right: 1px solid var(--muted);
+}
 """
     soup.head.append(theme_style)
 
-    # Add theme detector + toggle script
-    theme_script = soup.new_tag('script')
-    theme_script.string = '''(function(){
+    # Theme detector
+    theme_script = soup.new_tag("script")
+    theme_script.string = """(function(){
     try {
         var stored = localStorage.getItem('site-theme');
         var mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
@@ -217,7 +370,6 @@ a { color: var(--link); }
         if(useDark) document.documentElement.classList.add('theme-dark');
         else document.documentElement.classList.remove('theme-dark');
 
-        // Listen to system changes when no explicit preference stored
         if(!stored && mq) {
             var onChange = function(e){
                 document.documentElement.classList.toggle('theme-dark', e.matches);
@@ -226,48 +378,220 @@ a { color: var(--link); }
             else if(mq.addListener) mq.addListener(onChange);
         }
 
-        // Expose a small toggle function
         window.toggleSiteTheme = function(){
             var cur = document.documentElement.classList.toggle('theme-dark');
             localStorage.setItem('site-theme', cur ? 'dark' : 'light');
             return cur;
         };
     } catch(e){ console.warn('theme init failed', e); }
-})();'''
-    soup.body.append(theme_script)
+})();"""
+    soup.head.append(theme_script)
 
-    # Add Thebe activate and status widgets and a restart button at the top of the body
-    activate_div = soup.new_tag('div', **{"class": 'thebe-activate'})
-    status_div = soup.new_tag('div', **{"class": 'thebe-status'})
-    restart_button = soup.new_tag('button', id='restart-kernel')
-    restart_button.string = 'Restart Kernel'
-    soup.body.insert(0, restart_button)
-    soup.body.insert(0, status_div)
-    soup.body.insert(0, activate_div)
+    # Add thebe-core integration script
+    thebe_script = soup.new_tag("script", type="text/javascript")
+    thebe_script.string = """
+// Load thebe-core from CDN
+(function() {
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/thebe-core@latest/dist/lib/thebe-core.min.js';
+    script.onload = function() {
+        initializeThebe();
+    };
+    document.head.appendChild(script);
+})();
 
-    # Write back the modified HTML
-    with open(html_path, 'w', encoding='utf-8') as f:
+function initializeThebe() {
+    let server = null;
+    let session = null;
+    let notebook = null;
+    let rendermime = null;
+    let codeBlocks = [];
+
+    const LOCAL_OPTIONS = {
+        serverSettings: {
+            baseUrl: 'http://localhost:8888',
+            token: 'test-secret',
+        },
+        kernelOptions: {
+            kernelName: 'python3',
+        },
+    };
+
+    // Create control panel
+    const controlsDiv = document.createElement('div');
+    controlsDiv.className = 'thebe-controls';
+    controlsDiv.innerHTML = `
+        <div class="thebe-status">
+            <div class="thebe-status-indicator" id="status-indicator"></div>
+            <span id="status-text">Not connected</span>
+        </div>
+        <button id="connect-button">Connect</button>
+        <button id="run-all-button" disabled>Run All</button>
+        <button id="restart-button" disabled>Restart</button>
+    `;
+    document.body.insertBefore(controlsDiv, document.body.firstChild);
+
+    const statusIndicator = document.getElementById('status-indicator');
+    const statusText = document.getElementById('status-text');
+    const connectButton = document.getElementById('connect-button');
+    const runAllButton = document.getElementById('run-all-button');
+    const restartButton = document.getElementById('restart-button');
+
+    // Connect button handler
+    connectButton.addEventListener('click', async function() {
+        try {
+            connectButton.disabled = true;
+            connectButton.textContent = 'Connecting...';
+            statusIndicator.className = 'thebe-status-indicator connecting';
+            statusText.textContent = 'Connecting...';
+
+            // Create configuration
+            const config = window.thebeCore.api.makeConfiguration(LOCAL_OPTIONS);
+
+            // Connect to server
+            server = window.thebeCore.api.connectToJupyter(config);
+            await server.ready;
+
+            // Create rendermime registry
+            rendermime = window.thebeCore.api.makeRenderMimeRegistry();
+
+            // Start new session
+            session = await server.startNewSession(rendermime);
+
+            // Get code blocks from the page
+            codeBlocks = [];
+            document.querySelectorAll('.thebe-cell').forEach((cell, index) => {
+                const sourcePre = cell.querySelector('.thebe-source pre');
+                if (sourcePre) {
+                    codeBlocks.push({
+                        id: `cell-${index}`,
+                        source: sourcePre.textContent,
+                    });
+                }
+            });
+
+            // Create notebook from code blocks
+            notebook = window.thebeCore.api.setupNotebookFromBlocks(codeBlocks, config, rendermime);
+
+            // Attach session to notebook
+            notebook.attachSession(session);
+
+            // Attach cells to DOM
+            document.querySelectorAll('.thebe-cell').forEach((cellElement, index) => {
+                const cellId = `cell-${index}`;
+                const cell = notebook.getCellById(cellId);
+                const outputDiv = cellElement.querySelector('.thebe-output');
+                if (cell && outputDiv) {
+                    cell.attachToDOM(outputDiv);
+                }
+            });
+
+            statusIndicator.className = 'thebe-status-indicator connected';
+            statusText.textContent = 'Connected';
+            connectButton.textContent = 'Connected';
+            runAllButton.disabled = false;
+            restartButton.disabled = false;
+
+            // Setup cells
+            setupCells();
+        } catch (error) {
+            console.error('Connection error:', error);
+            statusIndicator.className = 'thebe-status-indicator';
+            statusText.textContent = 'Connection failed';
+            connectButton.textContent = 'Retry';
+            connectButton.disabled = false;
+        }
+    });
+
+    // Restart button handler
+    restartButton.addEventListener('click', async function() {
+        if (session) {
+            await session.restart();
+            statusText.textContent = 'Kernel restarted';
+
+            // Clear all outputs
+            document.querySelectorAll('.thebe-output').forEach(output => {
+                output.innerHTML = '';
+                output.classList.remove('thebe-output-has-content');
+            });
+        }
+    });
+
+    // Run all button handler
+    runAllButton.addEventListener('click', function() {
+        if (notebook) {
+            notebook.executeAll();
+        }
+    });
+
+    function setupCells() {
+        document.querySelectorAll('.thebe-cell').forEach((cell, index) => {
+            // Make the pre element editable
+            const sourceDiv = cell.querySelector('.thebe-source');
+            const preElement = sourceDiv.querySelector('pre');
+
+            if (preElement) {
+                preElement.contentEditable = 'true';
+                preElement.style.whiteSpace = 'pre';
+                preElement.style.fontFamily = 'monospace';
+                preElement.style.backgroundColor = 'var(--code-bg)';
+                preElement.style.color = 'var(--fg)';
+                preElement.style.padding = '1rem';
+                preElement.style.borderRadius = '8px 8px 0 0';
+                preElement.style.border = 'none';
+                preElement.style.outline = 'none';
+                preElement.style.minHeight = '2rem';
+
+                // Update cell source when content changes
+                preElement.addEventListener('input', function() {
+                    const cellId = `cell-${index}`;
+                    const cell = notebook.getCellById(cellId);
+                    if (cell) {
+                        cell.source = preElement.textContent;
+                    }
+                });
+            }
+
+            // Add run button event listener
+            const runButton = cell.querySelector('.cell-run-button');
+            runButton.addEventListener('click', () => executeCell(cell, index));
+        });
+    }
+
+    async function executeCell(cellElement, index) {
+        if (!notebook) return;
+
+        const cellId = `cell-${index}`;
+
+        try {
+            // Execute the specific cell (source is already updated via input event)
+            await notebook.executeOnly(cellId);
+        } catch (error) {
+            console.error('Execution error:', error);
+        }
+    }
+}
+"""
+    soup.body.append(thebe_script)
+
+    # Write modified HTML
+    with open(html_path, "w", encoding="utf-8") as f:
         f.write(str(soup))
 
 
 def main():
-    # Create pages directory if it doesn't exist
     os.makedirs("pages", exist_ok=True)
 
-    # Process all notebooks in the notebooks folder
     for file in os.listdir("notebooks"):
         if file.endswith(".ipynb"):
-            base_name = file[:-6]  # Remove .ipynb extension
+            base_name = file[:-6]
             html_file = f"pages/{base_name}.html"
             notebook_path = f"notebooks/{file}"
 
-            # Convert notebook to HTML
             convert_notebook_to_html(notebook_path, "pages", f"{base_name}.html")
+            add_thebe_core_to_html(html_file)
 
-            # Add Thebe integration
-            add_thebe_to_html(html_file)
-
-            print(f"Converted {file} to {html_file} with Thebe integration")
+            print(f"Converted {file} to {html_file} with Thebe Core integration")
 
 
 if __name__ == "__main__":
