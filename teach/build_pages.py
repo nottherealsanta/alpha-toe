@@ -29,18 +29,12 @@ def add_thebe_to_html(html_path):
     for style_tag in soup.find_all("style"):
         style_tag.decompose()
 
-    # Add font and preconnect links similar to index.html
+    # Add Google Fonts preconnect and stylesheet links (Inter + Roboto Mono)
     soup.head.append(soup.new_tag("link", rel="preconnect", href="https://fonts.googleapis.com"))
     soup.head.append(soup.new_tag("link", rel="preconnect", href="https://fonts.gstatic.com", crossorigin=True))
-    soup.head.append(soup.new_tag(
-        "link",
-        href=("https://fonts.googleapis.com/css2?family=Great+Vibes&family=IBM+Plex+Mono:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;1,100;1,200;1,300;1,400;1,500;1,600;1,700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"),
-        rel="stylesheet",
-    ))
-    soup.head.append(soup.new_tag("link", href="https://fonts.cdnfonts.com/css/sf-pro-display", rel="stylesheet"))
-
-    # Add Monaspace Argon (hosted) for code editing font
-    soup.head.append(soup.new_tag("link", href="https://fonts.cdnfonts.com/css/monaspace-argon", rel="stylesheet"))
+    # Use Inter for UI text and Roboto Mono for code blocks as reliable Google Fonts
+    gf_href = "https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Roboto+Mono:wght@400;700&display=swap"
+    soup.head.append(soup.new_tag("link", href=gf_href, rel="stylesheet"))
 
     # Add CodeMirror and Thebe CSS
     soup.head.append(soup.new_tag("link", rel="stylesheet", href="https://unpkg.com/codemirror@5.65.16/lib/codemirror.css"))
@@ -131,13 +125,17 @@ def add_thebe_to_html(html_path):
             pre['data-executable'] = 'true'
             pre['data-language'] = 'python'
 
-    # Inject CSS to set the code editor font to Monaspace Argon
+    # Inject CSS to set the code editor font to Roboto Mono and UI font to Inter
     style_tag = soup.new_tag('style')
     style_tag.string = """
 pre, code, .thebe pre, .cm-s-default, .CodeMirror, .CodeMirror pre {
-    font-family: 'Monaspace Argon', ui-monospace, SFMono-Regular, Menlo, Monaco, 'Roboto Mono', 'Courier New', monospace !important;
+    font-family: 'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, 'Courier New', monospace !important;
     font-size: 14px;
     line-height: 1.4;
+}
+
+body, .thebe-page-container, .notebook, .container, .body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif !important;
 }
 """
     soup.head.append(style_tag)
@@ -150,6 +148,7 @@ body {
     padding-left: 0;
     padding-right: 24px;
     box-sizing: border-box;
+    font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
 }
 
 /* Keep main content left-aligned and allow it to grow */
@@ -169,8 +168,8 @@ body {
 
 @media (min-width: 900px) {
     body {
-        padding-left: 0;
-        padding-right: 64px;
+        padding-left: 92px;
+        padding-right: 92px;
     }
 }
 """
