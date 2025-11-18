@@ -7,6 +7,8 @@ def convert_notebook_to_html(notebook_path, output_dir, output_file):
     """Convert a Jupyter notebook to HTML using nbconvert."""
     subprocess.run(
         [
+            "uv",
+            "run",
             "jupyter",
             "nbconvert",
             "--to",
@@ -69,57 +71,81 @@ def add_thebe_core_to_html(html_path):
 
     # Wrap code blocks in thebe-compatible structure
     cell_counter = 0
-    for pre in soup.find_all("pre"):
-        if (
-            pre.parent
-            and pre.parent.name == "div"
-            and "highlight" in pre.parent.get("class", [])
-        ):
-            cell_id = f"cell-{cell_counter}"
-            cell_counter += 1
+    # Iterate over code cells specifically
+    for cell in soup.find_all("div", class_="jp-CodeCell"):
+        # Check for tags
+        classes = cell.get("class", [])
+        hide_input = "celltag_hide-input" in classes
+        show_output = "celltag_show-output" in classes
 
-            # Create wrapper div
-            cell_wrapper = soup.new_tag("div")
-            cell_wrapper["class"] = "thebe-cell"
-            cell_wrapper["data-cell-id"] = cell_id
+        # Find the input block (highlight div)
+        input_div = cell.find("div", class_="highlight")
+        if not input_div:
+            continue
 
-            # Create source container
-            source_container = soup.new_tag("div")
-            source_container["class"] = "thebe-source"
-            source_container["data-thebe-source"] = ""
+        cell_id = f"cell-{cell_counter}"
+        cell_counter += 1
 
-            # Create output container
-            output_container = soup.new_tag("div")
-            output_container["class"] = "thebe-output"
+        # Create wrapper div
+        cell_wrapper = soup.new_tag("div")
+        cell_wrapper["class"] = "thebe-cell"
+        cell_wrapper["data-cell-id"] = cell_id
 
-            # Extract code content
-            code_content = pre.get_text()
+        # Create source container
+        source_container = soup.new_tag("div")
+        source_container["class"] = "thebe-source"
+        if hide_input:
+            source_container["class"] += " hidden"
+        source_container["data-thebe-source"] = ""
 
-            # Create pre element for source
-            source_pre = soup.new_tag("pre")
-            source_pre.string = code_content
-            source_container.append(source_pre)
+        # Create output container
+        output_container = soup.new_tag("div")
+        output_container["class"] = "thebe-output"
 
-            # Add run button
-            run_button = soup.new_tag("button")
-            run_button["class"] = "cell-run-button"
-            svg = soup.new_tag("svg")
-            svg["width"] = "24"
-            svg["height"] = "24"
-            svg["viewBox"] = "0 0 24 24"
-            path = soup.new_tag("path")
-            path["d"] = "M8 5v14l11-7z"
-            path["fill"] = "var(--accent)"
-            svg.append(path)
-            run_button.append(svg)
-            cell_wrapper.append(run_button)
+        # Extract code content
+        code_content = input_div.get_text()
 
-            # Assemble the cell
-            cell_wrapper.append(source_container)
-            cell_wrapper.append(output_container)
+        # Create pre element for source
+        source_pre = soup.new_tag("pre")
+        source_pre.string = code_content
+        source_container.append(source_pre)
 
-            # Replace original structure
-            pre.parent.replace_with(cell_wrapper)
+        # Add run button
+        run_button = soup.new_tag("button")
+        run_button["class"] = "cell-run-button"
+        svg = soup.new_tag("svg")
+        svg["width"] = "24"
+        svg["height"] = "24"
+        svg["viewBox"] = "0 0 24 24"
+        path = soup.new_tag("path")
+        path["d"] = "M8 5v14l11-7z"
+        path["fill"] = "var(--accent)"
+        svg.append(path)
+        run_button.append(svg)
+        cell_wrapper.append(run_button)
+
+        # Handle existing outputs if show-output is present
+        output_wrapper = cell.find("div", class_="jp-Cell-outputWrapper")
+        if show_output and output_wrapper:
+            # Find the actual output content
+            # Usually in jp-OutputArea-output
+            outputs = output_wrapper.find_all("div", class_="jp-OutputArea-output")
+            for output in outputs:
+                # We append the output to our thebe output container
+                # We might need to clean it up or just move it
+                output_container.append(output)
+                output_container["class"] += " thebe-output-has-content"
+
+        # Assemble the cell
+        cell_wrapper.append(source_container)
+        cell_wrapper.append(output_container)
+
+        # Replace the input div with our wrapper
+        input_div.replace_with(cell_wrapper)
+
+        # Remove the original output wrapper as we either moved it or want to strip it
+        if output_wrapper:
+            output_wrapper.decompose()
 
     # Font and base styling
     style_tag = soup.new_tag("style")
@@ -146,6 +172,10 @@ body, .notebook, .container {
 .thebe-source {
     position: relative;
     margin-bottom: 0;
+}
+
+.thebe-source.hidden {
+    display: none;
 }
 
 .thebe-editor {
