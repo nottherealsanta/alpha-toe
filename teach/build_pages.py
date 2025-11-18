@@ -157,7 +157,9 @@ body, .notebook, .container {
     padding-left: 0.5rem;
     padding-top: 0.5rem;
     padding-bottom: 1rem;
-    overflow-x: auto;
+    overflow-x: hidden;
+    white-space: pre-wrap;
+    word-wrap: break-word;
 }
 
 .thebe-output {
@@ -246,7 +248,14 @@ body, .notebook, .container {
 }
 
 .cm-scroller {
-    overflow: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+.cm-content,
+.cm-line {
+    white-space: pre-wrap !important;
+    word-wrap: break-word !important;
 }
 
 .cm-gutters {
@@ -326,117 +335,153 @@ body {
 """
     soup.head.append(page_style)
 
+    # Add anchor links to headings
+    for heading in soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+        if "id" in heading.attrs and not heading.find("a", class_="anchor-link"):
+            text_content = heading.get_text()
+            anchor = soup.new_tag("a")
+            anchor["class"] = "anchor-link"
+            anchor["href"] = "#" + heading["id"]
+            anchor.string = "#"
+            span = soup.new_tag("span")
+            span.string = text_content
+            heading.contents = [anchor, span]
+
     # Theme variables
     theme_style = soup.new_tag("style")
     theme_style.string = """
-:root {
-    --color-white: #ffffff;
-    --bg: #f9f9f6;
-    --text: #4D5461;
-    --text-lite: #737883;
-    --accent: #0969da;
-    --cell-input-bg: color-mix(in oklab, var(--color-white) 60%, transparent);
-    --cell-output-bg: transparent;
-}
+ :root {
+     --color-white: #ffffff;
+     --bg: #f9f9f6;
+     --text: #4D5461;
+     --text-lite: #9b9ea7;
+     --accent: #0969da;
+     --cell-input-bg: color-mix(in oklab, var(--color-white) 60%, transparent);
+     --cell-output-bg: transparent;
+ }
 
-.theme-dark {
-    --color-white: #ffffff;
-    --bg: #1a1a1f;
-    --text: #d4d5d9;
-    --text-lite: #9b9ca5;
-    --accent: #5b8bff;
-    --cell-input-bg: color-mix(in oklab, #2a2a35 80%, transparent);
-    --cell-output-bg: transparent;
-}
+ .theme-dark {
+     --color-white: #ffffff;
+     --bg: #1a1a1f;
+     --text: #d4d5d9;
+     --text-lite: #9b9ca5;
+     --accent: #5b8bff;
+     --cell-input-bg: color-mix(in oklab, #2a2a35 80%, transparent);
+     --cell-output-bg: transparent;
+ }
 
-body {
-    background: var(--bg) !important;
-    color: var(--text) !important;
-    transition: background .2s ease, color .2s ease;
-}
+ body {
+     background: var(--bg) !important;
+     color: var(--text) !important;
+     transition: background .2s ease, color .2s ease;
+ }
 
-pre, code {
-    background: var(--cell-input-bg) !important;
-    color: var(--text) !important;
-}
+ pre, code {
+     background: var(--cell-input-bg) !important;
+     color: var(--text) !important;
+ }
 
-.thebe-source pre {
-    border: 1px solid var(--text-lite);
-    background: var(--cell-input-bg) !important;
-    color: var(--text) !important;
-}
+ .thebe-source pre {
+     border: 1px solid var(--text-lite);
+     background: var(--cell-input-bg) !important;
+     color: var(--text) !important;
+ }
 
-.thebe-output {
-    background: var(--cell-output-bg) !important;
-    color: var(--text) !important;
-}
+ .thebe-output {
+     background: var(--cell-output-bg) !important;
+     color: var(--text) !important;
+ }
 
-a { 
-    color: var(--accent); 
-}
+ a {
+     color: var(--accent);
+ }
 
-.cm-editor {
-    color: var(--text) !important;
-}
+ .cm-editor {
+     color: var(--text) !important;
+ }
 
-.cm-gutters {
-    background: var(--cell-input-bg) !important;
-    border-right: 1px solid var(--text-lite);
-}
+ .cm-gutters {
+     background: var(--cell-input-bg) !important;
+     border-right: 1px solid var(--text-lite);
+ }
 
-.jp-RenderedMarkdown {
-    color: var(--text) !important;
-}
+ .jp-RenderedMarkdown {
+     color: var(--text) !important;
+ }
 
-.jp-RenderedMarkdown > h1,
-.jp-RenderedMarkdown > h2,
-.jp-RenderedMarkdown > h3 {
-    color: var(--accent) !important;
-    font-family: 'Lora', serif;
-}
+ .jp-RenderedMarkdown > h1,
+ .jp-RenderedMarkdown > h2,
+ .jp-RenderedMarkdown > h3,
+ .jp-RenderedMarkdown > h4,
+ .jp-RenderedMarkdown > h5,
+ .jp-RenderedMarkdown > h6 {
+     color: var(--accent) !important;
+     font-family: 'Lora', serif;
+     position: relative;
+ }
 
-.jp-RenderedMarkdown > h1 {
-    font-size: 48px;
-    font-weight: 500;
-    line-height: 1.2;
-}
+ .jp-RenderedMarkdown > h1 {
+     font-size: 48px;
+     font-weight: 500;
+     line-height: 1.2;
+ }
 
-.jp-RenderedMarkdown > h2 {
-    font-size: 36px;
-    font-weight: 500;
-    line-height: 1.3;
-}
+ .jp-RenderedMarkdown > h2 {
+     font-size: 36px;
+     font-weight: 500;
+     line-height: 1.3;
+ }
 
-.jp-RenderedMarkdown > h3 {
-    font-size: 28px;
-    font-weight: 500;
-    line-height: 1.3;
-}
+ .jp-RenderedMarkdown > h3 {
+     font-size: 28px;
+     font-weight: 500;
+     line-height: 1.3;
+ }
 
-.jp-RenderedMarkdown > p, li {
-    font-size: 16px;
-    line-height: 1.4;
-}
+ .jp-RenderedMarkdown > p, li {
+     font-size: 16px;
+     line-height: 1.4;
+ }
 
-.jp-Cell-inputArea {
-}
+ .jp-Cell-inputArea {
+ }
 
-.jp-InputPrompt {
-    position: absolute;
-    left: -4rem;
-    top: 0.5rem;
-    font-family: 'Fira Code', monospace;
-    color: var(--text-lite);
-    width: 3.5rem;
-    text-align: right;
-    font-size: 14px;
-}
+ .jp-InputPrompt {
+     position: absolute;
+     left: -4rem;
+     top: 0.5rem;
+     font-family: 'Fira Code', monospace;
+     color: var(--text-lite);
+     width: 3.5rem;
+     text-align: right;
+     font-size: 14px;
+ }
 
-.jp-OutputArea-output pre {
-    background: var(--cell-output-bg) !important;
-    color: var(--text) !important;
-    border: none !important;
-}
+ .jp-OutputArea-output pre {
+     background: var(--cell-output-bg) !important;
+     color: var(--text) !important;
+     border: none !important;
+ }
+
+ .anchor-link {
+     opacity: 0;
+     transition: opacity 0.2s;
+     position: absolute;
+     left: -1.5rem;
+     top: 0;
+     color: var(--text-lite);
+     text-decoration: none;
+     font-size: 0.8em;
+ }
+
+ h1:hover .anchor-link,
+ h2:hover .anchor-link,
+ h3:hover .anchor-link,
+ h4:hover .anchor-link,
+ h5:hover .anchor-link,
+ h6:hover .anchor-link {
+     opacity: 1;
+ }
 
 """
     soup.head.append(theme_style)
@@ -614,7 +659,8 @@ function initializeThebe() {
 
             if (preElement) {
                 preElement.contentEditable = 'true';
-                preElement.style.whiteSpace = 'pre';
+                preElement.style.whiteSpace = 'pre-wrap';
+                preElement.style.wordWrap = 'break-word';
                 preElement.style.fontFamily = 'monospace';
                 preElement.style.backgroundColor = 'var(--cell-input-bg)';
                 preElement.style.color = 'var(--text)';
