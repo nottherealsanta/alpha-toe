@@ -393,11 +393,11 @@ body {
 
  .theme-dark {
      --color-white: #ffffff;
-     --bg: #1a1a1f;
-     --text: #d4d5d9;
-     --text-lite: #9b9ca5;
-     --accent: #5b8bff;
-     --cell-input-bg: color-mix(in oklab, #2a2a35 80%, transparent);
+     --bg: #0d1117;
+     --text: #e6edf3;
+     --text-lite: #8b949e;
+     --accent: #58a6ff;
+     --cell-input-bg: #161b22;
      --cell-output-bg: transparent;
  }
 
