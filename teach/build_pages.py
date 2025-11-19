@@ -656,6 +656,16 @@ main {
      color: var(--text) !important;
  }
 
+ .jp-RenderedMarkdown {
+     width: 75%;
+     margin-right: auto;
+ }
+
+ .side-by-side-container .jp-RenderedMarkdown {
+     width: 100%;
+     margin-right: 0;
+ }
+
  .jp-RenderedMarkdown > h1,
  .jp-RenderedMarkdown > h2,
  .jp-RenderedMarkdown > h3,
