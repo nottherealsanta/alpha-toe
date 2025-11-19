@@ -77,6 +77,7 @@ def add_thebe_core_to_html(html_path):
         classes = cell.get("class", [])
         hide_input = "celltag_hide-input" in classes
         show_output = "celltag_show-output" in classes
+        output_only = "celltag_output-only" in classes
 
         # Find the input block (highlight div)
         input_div = cell.find("div", class_="highlight")
@@ -94,7 +95,7 @@ def add_thebe_core_to_html(html_path):
         # Create source container
         source_container = soup.new_tag("div")
         source_container["class"] = "thebe-source"
-        if hide_input:
+        if hide_input or output_only:
             source_container["class"] += " hidden"
         source_container["data-thebe-source"] = ""
 
@@ -111,22 +112,23 @@ def add_thebe_core_to_html(html_path):
         source_container.append(source_pre)
 
         # Add run button
-        run_button = soup.new_tag("button")
-        run_button["class"] = "cell-run-button"
-        svg = soup.new_tag("svg")
-        svg["width"] = "24"
-        svg["height"] = "24"
-        svg["viewBox"] = "0 0 24 24"
-        path = soup.new_tag("path")
-        path["d"] = "M8 5v14l11-7z"
-        path["fill"] = "var(--accent)"
-        svg.append(path)
-        run_button.append(svg)
-        cell_wrapper.append(run_button)
+        if not output_only:
+            run_button = soup.new_tag("button")
+            run_button["class"] = "cell-run-button"
+            svg = soup.new_tag("svg")
+            svg["width"] = "24"
+            svg["height"] = "24"
+            svg["viewBox"] = "0 0 24 24"
+            path = soup.new_tag("path")
+            path["d"] = "M8 5v14l11-7z"
+            path["fill"] = "var(--accent)"
+            svg.append(path)
+            run_button.append(svg)
+            cell_wrapper.append(run_button)
 
         # Handle existing outputs if show-output is present
         output_wrapper = cell.find("div", class_="jp-Cell-outputWrapper")
-        if show_output and output_wrapper:
+        if (show_output or output_only) and output_wrapper:
             # Find the actual output content
             # Usually in jp-OutputArea-output
             outputs = output_wrapper.find_all("div", class_="jp-OutputArea-output")
@@ -138,6 +140,11 @@ def add_thebe_core_to_html(html_path):
 
         # Assemble the cell
         cell_wrapper.append(source_container)
+        if hide_input and not output_only:
+            placeholder = soup.new_tag("div")
+            placeholder["class"] = "code-hidden-placeholder"
+            placeholder.string = "Code hidden"
+            cell_wrapper.append(placeholder)
         cell_wrapper.append(output_container)
 
         # Replace the input div with our wrapper
@@ -203,7 +210,6 @@ body, .notebook, .container {
 
 .thebe-output.thebe-output-has-content {
     display: block;
-    border-top: 1px solid var(--text-lite);
 }
 
 /* Controls styling */
@@ -336,6 +342,91 @@ body, .notebook, .container {
 """
     soup.head.append(style_tag)
 
+    # Modal and Placeholder CSS
+    modal_style = soup.new_tag("style")
+    modal_style.string = """
+/* Modal styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+    backdrop-filter: blur(4px);
+}
+
+.modal-content {
+    background-color: var(--bg);
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid var(--text-lite);
+    width: 95%;
+    max-width: 1400px;
+    border-radius: 8px;
+    position: relative;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+}
+
+.close {
+    color: var(--text-lite);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    align-self: flex-end;
+    margin-bottom: 10px;
+    line-height: 1;
+}
+
+.close:hover,
+.close:focus {
+    color: var(--text);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+#modal-code {
+    margin: 0;
+    padding: 1rem;
+    overflow: auto;
+    background: var(--cell-input-bg);
+    border: 1px solid var(--text-lite);
+    border-radius: 4px;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.code-hidden-placeholder {
+    background: var(--cell-input-bg);
+    border: 1px dashed var(--text-lite);
+    padding: 0.75rem;
+    text-align: center;
+    color: var(--text-lite);
+    cursor: pointer;
+    margin: 1rem 0;
+    border-radius: 4px;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.code-hidden-placeholder:hover {
+    background: var(--bg);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+"""
+    soup.head.append(modal_style)
+
     # Page layout
     page_style = soup.new_tag("style")
     page_style.string = """
@@ -350,18 +441,10 @@ body {
     margin-right: auto;
 }
 
-@media (max-width: 600px) {
-    body {
-        padding-left: 12px;
-        padding-right: 12px;
-    }
-}
-
-@media (min-width: 900px) {
-    body {
-        padding-left: 124px;
-        padding-right: 124px;
-    }
+main {
+    width: 60%;
+    margin-left: auto;
+    margin-right: auto;
 }
 """
     soup.head.append(page_style)
@@ -735,6 +818,60 @@ function initializeThebe() {
 }
 """
     soup.body.append(thebe_script)
+
+    # Add Modal for hidden code
+    modal_html = soup.new_tag("div")
+    modal_html["id"] = "code-modal"
+    modal_html["class"] = "modal"
+    
+    modal_content = soup.new_tag("div")
+    modal_content["class"] = "modal-content"
+    
+    close_span = soup.new_tag("span")
+    close_span["class"] = "close"
+    close_span.string = "×"
+    
+    modal_pre = soup.new_tag("pre")
+    modal_pre["id"] = "modal-code"
+    
+    modal_content.append(close_span)
+    modal_content.append(modal_pre)
+    modal_html.append(modal_content)
+    soup.body.append(modal_html)
+
+    # Add Modal JS
+    modal_script = soup.new_tag("script")
+    modal_script.string = """
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById("code-modal");
+        var modalCode = document.getElementById("modal-code");
+        var span = document.getElementsByClassName("close")[0];
+
+        if (span) {
+            span.onclick = function() {
+                modal.style.display = "none";
+            }
+        }
+
+        window.onclick = function(event) {
+            if (event.target == modal) {
+                modal.style.display = "none";
+            }
+        }
+        
+        document.querySelectorAll('.code-hidden-placeholder').forEach(item => {
+            item.addEventListener('click', event => {
+                var parent = item.parentElement;
+                var source = parent.querySelector('.thebe-source pre');
+                if (source) {
+                    modalCode.textContent = source.textContent;
+                    modal.style.display = "block";
+                }
+            });
+        });
+    });
+    """
+    soup.body.append(modal_script)
 
     # Write modified HTML
     with open(html_path, "w", encoding="utf-8") as f:
