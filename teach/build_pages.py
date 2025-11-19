@@ -740,6 +740,10 @@ main {
      opacity: 1;
  }
 
+ .mermaid {
+  display: none;
+ }
+
 """
     soup.head.append(theme_style)
 
