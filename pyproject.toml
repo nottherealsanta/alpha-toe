@@ -15,4 +15,6 @@ dependencies = [
     "livereload>=2.7.1",
     "beautifulsoup4>=4.14.2",
     "nbconvert>=7.16.6",
+    "matplotlib>=3.10.7",
+    "jupyterlab-widgets>=3.0.16",
 ]
