@@ -1,6 +1,7 @@
 import os
 import subprocess
 from bs4 import BeautifulSoup
+import json
 
 
 def convert_notebook_to_html(notebook_path, output_dir, output_file):
@@ -22,10 +23,28 @@ def convert_notebook_to_html(notebook_path, output_dir, output_file):
     )
 
 
-def add_thebe_core_to_html(html_path):
+def add_thebe_core_to_html(html_path, notebook_path):
     """Modify the HTML to integrate Thebe Core for interactive code execution."""
+    # Load notebook to get tags
+    with open(notebook_path, "r", encoding="utf-8") as f:
+        notebook_data = json.load(f)
+    
+    cell_tags = {}
+    for cell in notebook_data.get("cells", []):
+        if "id" in cell:
+            cell_tags[cell["id"]] = cell.get("metadata", {}).get("tags", [])
+
     with open(html_path, "r", encoding="utf-8") as f:
         soup = BeautifulSoup(f, "html.parser")
+
+    # Inject tags into HTML cells
+    for cell in soup.find_all("div", class_="jp-Cell"):
+        cell_id_attr = cell.get("id", "")
+        if cell_id_attr.startswith("cell-id="):
+            cell_id = cell_id_attr.replace("cell-id=", "")
+            tags = cell_tags.get(cell_id, [])
+            for tag in tags:
+                cell["class"].append(f"celltag_{tag}")
 
     # Remove all style tags to avoid conflicts
     for style_tag in soup.find_all("style"):
@@ -154,6 +173,82 @@ def add_thebe_core_to_html(html_path):
         if output_wrapper:
             output_wrapper.decompose()
 
+    # Group side-by-side cells
+    all_cells = soup.find_all("div", class_="jp-Cell")
+    i = 0
+    while i < len(all_cells):
+        cell = all_cells[i]
+        classes = cell.get("class", [])
+        
+        # Check for specific side-by-side tags
+        width_tag = None
+        if "celltag_side-side-50" in classes:
+            width_tag = 50
+        elif "celltag_side-side-25" in classes:
+            width_tag = 25
+        elif "celltag_side-side-75" in classes:
+            width_tag = 75
+            
+        if width_tag:
+            # We found a start of a side-by-side pair
+            if i + 1 >= len(all_cells):
+                raise ValueError(f"Cell with side-side-{width_tag} has no following cell.")
+            
+            next_cell = all_cells[i+1]
+            next_classes = next_cell.get("class", [])
+            
+            next_width_tag = None
+            if "celltag_side-side-50" in next_classes:
+                next_width_tag = 50
+            elif "celltag_side-side-25" in next_classes:
+                next_width_tag = 25
+            elif "celltag_side-side-75" in next_classes:
+                next_width_tag = 75
+                
+            if not next_width_tag:
+                 raise ValueError(f"Cell with side-side-{width_tag} followed by cell without side-side tag.")
+
+            # Validate pairs
+            if width_tag == 50 and next_width_tag != 50:
+                 raise ValueError(f"Cell with side-side-50 must be followed by side-side-50, found side-side-{next_width_tag}")
+            if width_tag == 25 and next_width_tag != 75:
+                 raise ValueError(f"Cell with side-side-25 must be followed by side-side-75, found side-side-{next_width_tag}")
+            if width_tag == 75 and next_width_tag != 25:
+                 raise ValueError(f"Cell with side-side-75 must be followed by side-side-25, found side-side-{next_width_tag}")
+
+            # Create container
+            container = soup.new_tag("div")
+            container["class"] = "side-by-side-container"
+            cell.insert_before(container)
+            container.append(cell)
+            container.append(next_cell)
+            
+            i += 2
+            continue
+
+        # Fallback for generic side-by-side (optional, keeping for backward compatibility if needed, or remove)
+        if "celltag_side-by-side" in classes:
+            group = [cell]
+            j = i + 1
+            while j < len(all_cells):
+                next_cell = all_cells[j]
+                next_classes = next_cell.get("class", [])
+                if "celltag_side-by-side" in next_classes:
+                    group.append(next_cell)
+                    j += 1
+                else:
+                    break
+            
+            if len(group) > 1:
+                container = soup.new_tag("div")
+                container["class"] = "side-by-side-container"
+                group[0].insert_before(container)
+                for c in group:
+                    container.append(c)
+            
+            i = j
+        else:
+            i += 1
     # Font and base styling
     style_tag = soup.new_tag("style")
     style_tag.string = """
@@ -166,6 +261,44 @@ pre, code, .thebe-source pre, .cm-editor, .cm-content {
 
 body, .notebook, .container {
     font-family: 'Noto Sans', Arial, sans-serif !important;
+}
+
+/* Side-by-side layout */
+.side-by-side-container {
+    display: flex;
+    flex-direction: row;
+    gap: 0rem;
+    width: 100%;
+    margin: 1.5rem 0;
+}
+
+.side-by-side-container .jp-Cell {
+    flex: 1;
+    min-width: 0;
+    margin: 0 !important;
+    align-content: center;
+}
+
+.celltag_side-side-50 {
+    flex: 0 0 50% !important;
+    max-width: 50%;
+}
+
+.celltag_side-side-25 {
+    flex: 0 0 25% !important;
+}
+
+.celltag_side-side-75 {
+    flex: 0 0 75% !important;
+}
+
+@media (max-width: 768px) {
+    .side-by-side-container {
+        flex-direction: column;
+    }
+}
+.jp-RenderedHTML{
+    margin: 0 !important;
 }
 
 /* Thebe cell structure */
@@ -881,14 +1014,15 @@ function initializeThebe() {
 def main():
     os.makedirs("pages", exist_ok=True)
 
-    for file in os.listdir("notebooks"):
+    notebooks_dir = os.path.join("notebooks")
+    for file in os.listdir(notebooks_dir):
         if file.endswith(".ipynb"):
             base_name = file[:-6]
             html_file = f"pages/{base_name}.html"
-            notebook_path = f"notebooks/{file}"
+            notebook_path = os.path.join(notebooks_dir, file)
 
             convert_notebook_to_html(notebook_path, "pages", f"{base_name}.html")
-            add_thebe_core_to_html(html_file)
+            add_thebe_core_to_html(html_file, notebook_path)
 
             print(f"Converted {file} to {html_file} with Thebe Core integration")
 
