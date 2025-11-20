@@ -84,9 +84,44 @@ def add_thebe_core_to_html(html_path, notebook_path):
     codemirror_theme_css = soup.new_tag(
         "link",
         rel="stylesheet",
-        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/darcula.min.css",
+        href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/theme/neo.min.css",
     )
     soup.head.append(codemirror_theme_css)
+
+    # Add CodeMirror JS
+    # We need to temporarily hide 'define' to prevent CodeMirror from trying to register with RequireJS
+    # which causes "Mismatched anonymous define() module" errors when loaded via script tags.
+    hide_define_script = soup.new_tag("script")
+    hide_define_script.string = """
+        if (window.define) {
+            window._define = window.define;
+            window.define = null;
+        }
+    """
+    soup.head.append(hide_define_script)
+
+    codemirror_js = soup.new_tag(
+        "script",
+        type="text/javascript",
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js",
+    )
+    soup.head.append(codemirror_js)
+
+    codemirror_mode_js = soup.new_tag(
+        "script",
+        type="text/javascript",
+        src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/python/python.min.js",
+    )
+    soup.head.append(codemirror_mode_js)
+
+    restore_define_script = soup.new_tag("script")
+    restore_define_script.string = """
+        if (window._define) {
+            window.define = window._define;
+            window._define = null;
+        }
+    """
+    soup.head.append(restore_define_script)
 
     # Wrap code blocks in thebe-compatible structure
     cell_counter = 0
@@ -253,7 +288,7 @@ def add_thebe_core_to_html(html_path, notebook_path):
     style_tag = soup.new_tag("style")
     style_tag.string = """
 /* Font settings */
-pre, code, .thebe-source pre, .cm-editor, .cm-content {
+pre, code, .thebe-source pre, .cm-editor, .cm-content, .CodeMirror {
     font-family: 'Fira Code', monospace,'Courier New', monospace !important;
     font-size: 16px;
     line-height: 1.4;
@@ -324,7 +359,7 @@ body, .notebook, .container {
 
 .thebe-source pre {
     margin: 0;
-    padding-left: 0.5rem;
+    padding-left: 2rem;
     padding-top: 0.5rem;
     padding-bottom: 1rem;
     overflow-x: hidden;
@@ -411,6 +446,43 @@ body, .notebook, .container {
     50% { opacity: 0.5; }
 }
 
+/* Theme toggle button */
+.theme-toggle-btn {
+    padding: 0.5rem !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 40px;
+    height: 40px;
+}
+
+.theme-toggle-btn svg {
+    position: absolute;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.theme-toggle-btn .sun-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+.theme-toggle-btn .moon-icon {
+    opacity: 0;
+    transform: rotate(180deg);
+}
+
+.theme-toggle-btn.dark-mode .sun-icon {
+    opacity: 0;
+    transform: rotate(180deg);
+}
+
+.theme-toggle-btn.dark-mode .moon-icon {
+    opacity: 1;
+    transform: rotate(0deg);
+}
+
+
 /* CodeMirror editor styling */
 .cm-editor {
     border-radius: 8px 8px 0 0;
@@ -471,6 +543,12 @@ body, .notebook, .container {
 
 .thebe-editor .CodeMirror-gutters {
     border-radius: 8px 0 0 0;
+}
+.CodeMirror-lines {
+    padding: 0px 0 !important;
+}
+.CodeMirror-vscrollbar{
+display: none;
 }
 """
     soup.head.append(style_tag)
@@ -603,17 +681,17 @@ main {
      --text: #4D5461;
      --text-lite: #9b9ea7;
      --accent: #0969da;
-     --cell-input-bg: color-mix(in oklab, var(--color-white) 60%, transparent);
+     --cell-input-bg: #FEFEFD;
      --cell-output-bg: transparent;
  }
 
  .theme-dark {
      --color-white: #ffffff;
-     --bg: #0d1117;
+     --bg: #141519;
      --text: #e6edf3;
      --text-lite: #8b949e;
      --accent: #58a6ff;
-     --cell-input-bg: #161b22;
+     --cell-input-bg: #171A23;
      --cell-output-bg: transparent;
  }
 
@@ -758,9 +836,13 @@ main {
         if(useDark) document.documentElement.classList.add('theme-dark');
         else document.documentElement.classList.remove('theme-dark');
 
-        if(!stored && mq) {
+        // Always listen for system theme changes when no manual preference is stored
+        if(mq) {
             var onChange = function(e){
-                document.documentElement.classList.toggle('theme-dark', e.matches);
+                // Only auto-switch if user hasn't set a manual preference
+                if(!localStorage.getItem('site-theme')) {
+                    document.documentElement.classList.toggle('theme-dark', e.matches);
+                }
             };
             if(mq.addEventListener) mq.addEventListener('change', onChange);
             else if(mq.addListener) mq.addListener(onChange);
@@ -809,6 +891,22 @@ function initializeThebe() {
     const controlsDiv = document.createElement('div');
     controlsDiv.className = 'thebe-controls';
     controlsDiv.innerHTML = `
+        <button id="theme-toggle-button" class="theme-toggle-btn" title="Toggle theme">
+            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="5"></circle>
+                <line x1="12" y1="1" x2="12" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="23"></line>
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                <line x1="1" y1="12" x2="3" y2="12"></line>
+                <line x1="21" y1="12" x2="23" y2="12"></line>
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+            </svg>
+            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+            </svg>
+        </button>
         <div class="thebe-status">
             <div class="thebe-status-indicator" id="status-indicator"></div>
             <span id="status-text">Not connected</span>
@@ -824,6 +922,21 @@ function initializeThebe() {
     const connectButton = document.getElementById('connect-button');
     const runAllButton = document.getElementById('run-all-button');
     const restartButton = document.getElementById('restart-button');
+    const themeToggleButton = document.getElementById('theme-toggle-button');
+
+    // Update theme toggle icon based on current theme
+    function updateThemeIcon() {
+        const isDark = document.documentElement.classList.contains('theme-dark');
+        themeToggleButton.classList.toggle('dark-mode', isDark);
+    }
+    updateThemeIcon();
+
+    // Theme toggle button handler
+    themeToggleButton.addEventListener('click', function() {
+        window.toggleSiteTheme();
+        updateThemeIcon();
+    });
+
 
     // Connect button handler
     connectButton.addEventListener('click', async function() {
@@ -919,34 +1032,49 @@ function initializeThebe() {
             const preElement = sourceDiv.querySelector('pre');
 
             if (preElement) {
-                preElement.contentEditable = 'true';
-                preElement.style.whiteSpace = 'pre-wrap';
-                preElement.style.wordWrap = 'break-word';
-                preElement.style.fontFamily = 'monospace';
-                preElement.style.backgroundColor = 'var(--cell-input-bg)';
-                preElement.style.color = 'var(--text)';
-                preElement.style.paddingRight = '0rem';
-                preElement.style.paddingLeft = '0.5rem';
-                preElement.style.paddingTop = '0.5rem';
-                preElement.style.paddingBottom = '0.5rem';
-                preElement.style.borderRadius = '0px';
-                 preElement.style.border = '1px solid var(--text-lite)';
-                preElement.style.outline = 'none';
-                preElement.style.minHeight = '2rem';
+                const codeContent = preElement.textContent;
+                sourceDiv.innerHTML = ''; // Clear the pre element
 
+                // Initialize CodeMirror
+                const cm = CodeMirror(sourceDiv, {
+                    value: codeContent,
+                    mode: "python",
+                    theme: "neo",
+                    lineNumbers: false,
+                    viewportMargin: Infinity,
+                    indentUnit: 4,
+                    extraKeys: {
+                        "Tab": function(cm) {
+                            var spaces = Array(cm.getOption("indentUnit") + 1).join(" ");
+                            cm.replaceSelection(spaces);
+                        }
+                    }
+                });
+
+                // Style adjustments for CodeMirror to match design
+                cm.getWrapperElement().style.backgroundColor = 'var(--cell-input-bg)';
+                cm.getWrapperElement().style.border = '1px solid var(--text-lite)';
+                cm.getWrapperElement().style.paddingLeft = '2rem';
+                cm.getWrapperElement().style.paddingTop = '0.5rem';
+                cm.getWrapperElement().style.paddingBottom = '1rem';
+                cm.getWrapperElement().style.fontFamily = '"Fira Code", monospace';
+                cm.getWrapperElement().style.height = 'auto';
+                
                 // Update cell source when content changes
-                preElement.addEventListener('input', function() {
+                cm.on('change', function() {
                     const cellId = `cell-${index}`;
                     const cell = notebook.getCellById(cellId);
                     if (cell) {
-                        cell.source = preElement.textContent;
+                        cell.source = cm.getValue();
                     }
                 });
             }
 
             // Add run button event listener
             const runButton = cell.querySelector('.cell-run-button');
-            runButton.addEventListener('click', () => executeCell(cell, index));
+            if (runButton) {
+                runButton.addEventListener('click', () => executeCell(cell, index));
+            }
         });
     }
 
