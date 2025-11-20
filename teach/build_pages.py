@@ -361,10 +361,11 @@ body, .notebook, .container {
     margin: 0;
     padding-left: 2rem;
     padding-top: 0.5rem;
-    padding-bottom: 1rem;
+    padding-bottom: 1.3rem;
     overflow-x: hidden;
     white-space: pre-wrap;
     word-wrap: break-word;
+    line-height: 1.45;
 }
 
 .thebe-output {
@@ -1042,6 +1043,7 @@ function initializeThebe() {
                     theme: "neo",
                     lineNumbers: false,
                     viewportMargin: Infinity,
+                    scrollbarStyle: "null",
                     indentUnit: 4,
                     extraKeys: {
                         "Tab": function(cm) {
@@ -1054,9 +1056,9 @@ function initializeThebe() {
                 // Style adjustments for CodeMirror to match design
                 cm.getWrapperElement().style.backgroundColor = 'var(--cell-input-bg)';
                 cm.getWrapperElement().style.border = '1px solid var(--text-lite)';
-                cm.getWrapperElement().style.paddingLeft = '2rem';
+                cm.getWrapperElement().style.paddingLeft = '1.7rem';
                 cm.getWrapperElement().style.paddingTop = '0.5rem';
-                cm.getWrapperElement().style.paddingBottom = '1rem';
+                cm.getWrapperElement().style.paddingBottom = '0rem';
                 cm.getWrapperElement().style.fontFamily = '"Fira Code", monospace';
                 cm.getWrapperElement().style.height = 'auto';
                 
