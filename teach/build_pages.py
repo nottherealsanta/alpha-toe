@@ -1264,10 +1264,15 @@ def main():
         if file.endswith(".ipynb"):
             base_name = file[:-6]
             html_file = f"pages/{base_name}.html"
+            temp_html_file = f"pages/{base_name}.tmp.html"
             notebook_path = os.path.join(notebooks_dir, file)
 
-            convert_notebook_to_html(notebook_path, "pages", f"{base_name}.html")
-            add_thebe_core_to_html(html_file, notebook_path)
+            # Generate to temp file
+            convert_notebook_to_html(notebook_path, "pages", f"{base_name}.tmp.html")
+            add_thebe_core_to_html(temp_html_file, notebook_path)
+
+            # Atomic move
+            os.rename(temp_html_file, html_file)
 
             print(f"Converted {file} to {html_file} with Thebe Core integration")
 
