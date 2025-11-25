@@ -588,24 +588,36 @@ display: none;
 
 .modal-content {
     background-color: var(--bg);
-    margin: 5% auto;
-    padding: 20px;
+    margin-top: 1%;
+    margin-bottom: 1%;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 3px;
     border: 1px solid var(--text-lite);
     width: 95%;
     max-width: 1400px;
-    border-radius: 8px;
     position: relative;
-    max-height: 85vh;
+    max-height: 95vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 4px 24px rgba(0,0,0,0.15);
 }
 
 .close {
+    position: absolute;
+    right: -52px;
+    top: 0px;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg);
+    opacity: 0.5;
     color: var(--text-lite);
-    float: right;
+    padding: 6px;
     font-size: 28px;
-    font-weight: bold;
     cursor: pointer;
     align-self: flex-end;
     margin-bottom: 10px;
@@ -617,6 +629,7 @@ display: none;
     color: var(--text);
     text-decoration: none;
     cursor: pointer;
+    opacity: 1;
 }
 
 #modal-code {
@@ -625,11 +638,31 @@ display: none;
     overflow: auto;
     background: var(--cell-input-bg);
     border: 1px solid var(--text-lite);
-    border-radius: 4px;
     font-family: 'Fira Code', monospace;
     font-size: 14px;
     white-space: pre-wrap;
     word-wrap: break-word;
+    /* Firefox */
+    scrollbar-width: thin;
+    scrollbar-color: var(--text-lite) var(--bg);
+}
+
+/* Custom scrollbar for modal code (WebKit) */
+#modal-code::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+#modal-code::-webkit-scrollbar-track {
+    background: var(--bg);
+}
+#modal-code::-webkit-scrollbar-thumb {
+    background-color: var(--text-lite);
+    border-radius: 4px;
+    border: 2px solid var(--bg);
+}
+#modal-code::-webkit-scrollbar-thumb:hover {
+    background-color: var(--text-lite);
+    opacity: 0.9;
 }
 
 .code-hidden-placeholder {
@@ -640,7 +673,6 @@ display: none;
     color: var(--text-lite);
     cursor: pointer;
     margin: 1rem 0;
-    border-radius: 4px;
     font-family: 'Inter', sans-serif;
     font-size: 14px;
     transition: all 0.2s ease;
@@ -1131,6 +1163,12 @@ function initializeThebe() {
         document.querySelectorAll('.thebe-cell').forEach((cell, index) => {
             // Make the pre element editable
             const sourceDiv = cell.querySelector('.thebe-source');
+            
+            // Skip hidden cells to preserve the pre element for the modal
+            if (sourceDiv.classList.contains('hidden')) {
+                return;
+            }
+
             const preElement = sourceDiv.querySelector('pre');
 
             if (preElement) {
