@@ -46,9 +46,14 @@ def add_thebe_core_to_html(html_path, notebook_path):
             for tag in tags:
                 cell["class"].append(f"celltag_{tag}")
 
-    # Remove all style tags to avoid conflicts
+    # Remove style tags that are NOT inside cell outputs to avoid conflicts
+    # We want to preserve inline styles in outputs (e.g., animations)
     for style_tag in soup.find_all("style"):
-        style_tag.decompose()
+        # Check if this style tag is inside a cell output
+        parent = style_tag.find_parent("div", class_="jp-OutputArea-output")
+        if not parent:
+            # This is a notebook-level style tag, remove it
+            style_tag.decompose()
 
     # Add Google Fonts
     soup.head.append(
@@ -1164,10 +1169,6 @@ function initializeThebe() {
             // Make the pre element editable
             const sourceDiv = cell.querySelector('.thebe-source');
             
-            // Skip hidden cells to preserve the pre element for the modal
-            if (sourceDiv.classList.contains('hidden')) {
-                return;
-            }
 
             const preElement = sourceDiv.querySelector('pre');
 
