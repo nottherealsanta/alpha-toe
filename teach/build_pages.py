@@ -222,39 +222,39 @@ def add_thebe_core_to_html(html_path, notebook_path):
         
         # Check for specific side-by-side tags
         width_tag = None
-        if "celltag_side-side-50" in classes:
+        if "celltag_s50" in classes:
             width_tag = 50
-        elif "celltag_side-side-25" in classes:
+        elif "celltag_s25" in classes:
             width_tag = 25
-        elif "celltag_side-side-75" in classes:
+        elif "celltag_s75" in classes:
             width_tag = 75
             
         if width_tag:
             # We found a start of a side-by-side pair
             if i + 1 >= len(all_cells):
-                raise ValueError(f"Cell with side-side-{width_tag} has no following cell.")
+                raise ValueError(f"Cell with s{width_tag} has no following cell.")
             
             next_cell = all_cells[i+1]
             next_classes = next_cell.get("class", [])
             
             next_width_tag = None
-            if "celltag_side-side-50" in next_classes:
+            if "celltag_s50" in next_classes:
                 next_width_tag = 50
-            elif "celltag_side-side-25" in next_classes:
+            elif "celltag_s25" in next_classes:
                 next_width_tag = 25
-            elif "celltag_side-side-75" in next_classes:
+            elif "celltag_s75" in next_classes:
                 next_width_tag = 75
                 
             if not next_width_tag:
-                 raise ValueError(f"Cell with side-side-{width_tag} followed by cell without side-side tag.")
+                 raise ValueError(f"Cell with s{width_tag} followed by cell without side-side tag.")
 
             # Validate pairs
             if width_tag == 50 and next_width_tag != 50:
-                 raise ValueError(f"Cell with side-side-50 must be followed by side-side-50, found side-side-{next_width_tag}")
+                 raise ValueError(f"Cell with s50 must be followed by s50, found s{next_width_tag}")
             if width_tag == 25 and next_width_tag != 75:
-                 raise ValueError(f"Cell with side-side-25 must be followed by side-side-75, found side-side-{next_width_tag}")
+                 raise ValueError(f"Cell with s25 must be followed by s75, found s{next_width_tag}")
             if width_tag == 75 and next_width_tag != 25:
-                 raise ValueError(f"Cell with side-side-75 must be followed by side-side-25, found side-side-{next_width_tag}")
+                 raise ValueError(f"Cell with s75 must be followed by s25, found s{next_width_tag}")
 
             # Create container
             container = soup.new_tag("div")
@@ -319,16 +319,16 @@ body, .notebook, .container {
     align-content: center;
 }
 
-.celltag_side-side-50 {
+.celltag_s50 {
     flex: 0 0 50% !important;
     max-width: 50%;
 }
 
-.celltag_side-side-25 {
+.celltag_s25 {
     flex: 0 0 25% !important;
 }
 
-.celltag_side-side-75 {
+.celltag_s75 {
     flex: 0 0 75% !important;
 }
 
