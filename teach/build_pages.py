@@ -1246,7 +1246,15 @@ function initializeThebe() {
 
 
     // Connect button handler
-    connectButton.addEventListener('click', async function() {
+    connectButton.addEventListener('click', () => connectToKernel());
+
+    // Auto-connect if session exists
+    if (localStorage.getItem('thebeSessionId')) {
+        console.log('AlphaToe: Found saved session, auto-connecting...');
+        connectToKernel();
+    }
+
+    async function connectToKernel() {
         try {
             connectButton.disabled = true;
             connectButton.textContent = 'Connecting...';
@@ -1259,6 +1267,7 @@ function initializeThebe() {
             // Connect to server
             server = window.thebeCore.api.connectToJupyter(config);
             await server.ready;
+            console.log('AlphaToe: Server ready', server);
 
             // Create rendermime registry
             rendermime = window.thebeCore.api.makeRenderMimeRegistry();
@@ -1269,26 +1278,39 @@ function initializeThebe() {
 
             if (savedSessionId) {
                 try {
-                    console.log('Attempting to reconnect to session:', savedSessionId);
+                    console.log('AlphaToe: Attempting to reconnect to session:', savedSessionId);
+                    
                     // List running sessions to see if ours is still there
-                    const runningSessions = await server.listRunningSessions();
+                    let runningSessions = [];
+                    if (typeof server.listRunningSessions === 'function') {
+                         runningSessions = await server.listRunningSessions();
+                    } else {
+                        console.warn('AlphaToe: server.listRunningSessions is not a function');
+                    }
+                    
+                    console.log('AlphaToe: Running sessions:', runningSessions);
+
                     const sessionExists = runningSessions.find(s => s.id === savedSessionId);
                     
                     if (sessionExists) {
+                        console.log('AlphaToe: Found existing session, connecting...');
                         session = await server.connectToSession(savedSessionId);
                         sessionConnected = true;
-                        console.log('Reconnected to existing session');
+                        console.log('AlphaToe: Reconnected to existing session');
+                    } else {
+                        console.log('AlphaToe: Saved session ID not found in running sessions');
                     }
                 } catch (e) {
-                    console.warn('Failed to reconnect to session:', e);
+                    console.warn('AlphaToe: Failed to reconnect to session:', e);
                     localStorage.removeItem('thebeSessionId');
                 }
             }
 
             if (!sessionConnected) {
-                console.log('Starting new session');
+                console.log('AlphaToe: Starting new session');
                 // Start new session
                 session = await server.startNewSession(rendermime);
+                console.log('AlphaToe: New session started:', session.id);
                 // Save session ID
                 localStorage.setItem('thebeSessionId', session.id);
             }
@@ -1351,7 +1373,7 @@ function initializeThebe() {
             // Clear saved session on fatal error
             localStorage.removeItem('thebeSessionId');
         }
-    });
+    }
 
     // Restart button handler
     restartButton.addEventListener('click', async function() {
