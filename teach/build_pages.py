@@ -406,8 +406,8 @@ body, .notebook, .container {
     padding-bottom: 10px;
     padding-left: 10px;
     padding-right: 10px;
-    border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
 
 .thebe-controls button {
@@ -415,7 +415,7 @@ body, .notebook, .container {
     border: 0px solid var(--text-lite);
     background: var(--cell-input-bg);
     color: var(--text);
-    border-radius: 6px;
+    border-radius: 0px;
     cursor: pointer;
     font-family: 'Inter', sans-serif;
     font-size: 14px;
@@ -778,8 +778,16 @@ main {
     color: #b467d5;
 }
 
-.theme-dark .cm-property, .cm-keyword {
+.theme-dark .cm-property,  {
     color: #269cf0 !important;
+}
+
+.cm-keyword {
+    color: #c35d56 !important;
+}
+
+.theme-dark .cm-keyword {
+    color: #ff7b72 !important;
 }
 
 .theme-dark .cm-string {
