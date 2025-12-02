@@ -1217,8 +1217,8 @@ function initializeThebe() {
                     cm.getWrapperElement().style.backgroundColor = 'var(--cell-input-bg)';
                     cm.getWrapperElement().style.border = '1px solid var(--text-lite)';
                     cm.getWrapperElement().style.paddingLeft = '1.7rem';
-                    cm.getWrapperElement().style.paddingTop = '0.5rem';
-                    cm.getWrapperElement().style.paddingBottom = '0.5rem';
+                    cm.getWrapperElement().style.paddingTop = '0.75rem';
+                    cm.getWrapperElement().style.paddingBottom = '1rem';
                     cm.getWrapperElement().style.fontFamily = '"Fira Code", monospace';
                     cm.getWrapperElement().style.height = 'auto';
                     
