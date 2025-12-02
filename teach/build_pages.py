@@ -711,6 +711,126 @@ display: none;
 """
     soup.head.append(modal_style)
 
+    # First Visit Modal CSS
+    first_visit_style = soup.new_tag("style")
+    first_visit_style.string = """
+#first-visit-modal {
+    display: none;
+    position: fixed;
+    z-index: 2100;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.6);
+    backdrop-filter: blur(5px);
+    align-items: center;
+    justify-content: center;
+}
+
+#first-visit-modal .modal-content {
+    background-color: var(--bg);
+    padding: 2rem;
+    border: 1px solid var(--text-lite);
+    width: 90%;
+    max-width: 800px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+#first-visit-modal h2 {
+    margin-top: 0;
+    color: var(--accent);
+    font-family: 'Lora', serif;
+    font-size: 24px;
+    font-weight: 300;
+
+}
+
+#first-visit-modal p {
+    color: var(--text);
+    line-height: 1.6;
+    font-size: 16px;
+    font-family: 'Inter', sans-serif;
+}
+
+.command-box {
+    background: var(--cell-input-bg);
+    border: 1px solid var(--text-lite);
+    padding: 1rem;
+    position: relative;
+    margin-bottom: 1rem;
+}
+
+.command-box pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    color: var(--text);
+    background: transparent !important;
+    border: none !important;
+}
+
+.copy-btn {
+    background: var(--accent);
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    color: var(--bg);
+    transition: all 0.2s;
+    margin-left: auto;
+    margin-right: 0;
+}
+
+.copy-btn:hover {
+    color: var(--accent);
+    background: var(--bg);
+    border-color: var(--accent);
+    border-width: 1px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.primary-btn {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    cursor: pointer;
+    font-weight: 500;
+    transition: opacity 0.2s;
+}
+
+.primary-btn:hover {
+    opacity: 0.9;
+}
+
+.github-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-lite);
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.github-link:hover {
+    color: var(--accent);
+}
+"""
+    soup.head.append(first_visit_style)
+
     # Page layout
     page_style = soup.new_tag("style")
     page_style.string = """
@@ -1143,8 +1263,35 @@ function initializeThebe() {
             // Create rendermime registry
             rendermime = window.thebeCore.api.makeRenderMimeRegistry();
 
-            // Start new session
-            session = await server.startNewSession(rendermime);
+            // Try to reconnect to existing session
+            const savedSessionId = localStorage.getItem('thebeSessionId');
+            let sessionConnected = false;
+
+            if (savedSessionId) {
+                try {
+                    console.log('Attempting to reconnect to session:', savedSessionId);
+                    // List running sessions to see if ours is still there
+                    const runningSessions = await server.listRunningSessions();
+                    const sessionExists = runningSessions.find(s => s.id === savedSessionId);
+                    
+                    if (sessionExists) {
+                        session = await server.connectToSession(savedSessionId);
+                        sessionConnected = true;
+                        console.log('Reconnected to existing session');
+                    }
+                } catch (e) {
+                    console.warn('Failed to reconnect to session:', e);
+                    localStorage.removeItem('thebeSessionId');
+                }
+            }
+
+            if (!sessionConnected) {
+                console.log('Starting new session');
+                // Start new session
+                session = await server.startNewSession(rendermime);
+                // Save session ID
+                localStorage.setItem('thebeSessionId', session.id);
+            }
 
             // Get code blocks from the page
             codeBlocks = [];
@@ -1201,6 +1348,8 @@ function initializeThebe() {
             statusText.textContent = 'Connection failed';
             connectButton.textContent = 'Retry';
             connectButton.disabled = false;
+            // Clear saved session on fatal error
+            localStorage.removeItem('thebeSessionId');
         }
     });
 
@@ -1337,6 +1486,63 @@ function initializeThebe() {
     modal_html.append(modal_content)
     soup.body.append(modal_html)
 
+    # Add First Visit Modal HTML
+    fv_modal = soup.new_tag("div")
+    fv_modal["id"] = "first-visit-modal"
+    
+    fv_content = soup.new_tag("div")
+    fv_content["class"] = "modal-content"
+    
+    fv_h2 = soup.new_tag("h2")
+    fv_h2.string = "Welcome to Alpha Toe!"
+    
+    fv_p1 = soup.new_tag("p")
+    fv_p1.string = "To interact with the code and run simulations, you need to run a local Jupyter server. Please run the following command in your terminal:"
+    
+    fv_cmd_box = soup.new_tag("div")
+    fv_cmd_box["class"] = "command-box"
+    
+    fv_pre = soup.new_tag("pre")
+    fv_pre["id"] = "server-command"
+    fv_pre.string = "uvx -p 3.11 jupyter lab --NotebookApp.token=test-secret --NotebookApp.allow_origin='*' --no-browser"
+    
+    fv_copy_btn = soup.new_tag("button")
+    fv_copy_btn["class"] = "copy-btn"
+    fv_copy_btn["onclick"] = "copyCommand()"
+    fv_copy_btn.string = "Copy"
+    
+    fv_cmd_box.append(fv_pre)
+    
+    fv_actions = soup.new_tag("div")
+    fv_actions["class"] = "modal-actions"
+    
+    fv_gh_link = soup.new_tag("a")
+    fv_gh_link["href"] = "https://github.com/nottherealsanta/alpha-toe"
+    fv_gh_link["class"] = "github-link"
+    fv_gh_link["target"] = "_blank"
+    fv_gh_link.string = "View on GitHub"
+    
+    fv_close_btn = soup.new_tag("button")
+    fv_close_btn["class"] = "primary-btn"
+    fv_close_btn["onclick"] = "closeFirstVisitModal()"
+    fv_close_btn.string = "Got it!"
+    
+    fv_actions.append(fv_gh_link)
+    fv_actions.append(fv_close_btn)
+    
+    fv_content.append(fv_h2)
+    fv_content.append(fv_p1)
+
+    fv_cmd_copy = soup.new_tag("div")
+    fv_cmd_copy.append(fv_copy_btn)
+    fv_cmd_copy.append(fv_cmd_box)
+
+    fv_content.append(fv_cmd_copy)
+    fv_content.append(fv_actions)
+    
+    fv_modal.append(fv_content)
+    soup.body.append(fv_modal)
+
     # Add Modal JS
     modal_script = soup.new_tag("script")
     modal_script.string = """
@@ -1370,6 +1576,78 @@ function initializeThebe() {
     });
     """
     soup.body.append(modal_script)
+
+    # First Visit Modal JS
+    fv_script = soup.new_tag("script")
+    fv_script.string = """
+    function showFirstVisitModal() {
+        console.log('AlphaToe: Showing first visit modal function called');
+        const modal = document.getElementById('first-visit-modal');
+        if (modal) {
+            console.log('AlphaToe: Modal element found, setting display to flex');
+            modal.style.setProperty('display', 'flex', 'important');
+            // Also ensure z-index is high enough
+            modal.style.zIndex = '9999';
+        } else {
+            console.error('AlphaToe: First visit modal element not found!');
+        }
+    }
+
+    function closeFirstVisitModal() {
+        const modal = document.getElementById('first-visit-modal');
+        if (modal) modal.style.display = 'none';
+        try {
+            localStorage.setItem('alphaToeVisited', 'true');
+        } catch (e) {
+            console.warn('AlphaToe: Failed to set localStorage', e);
+        }
+    }
+
+    function copyCommand() {
+        const command = document.getElementById('server-command').innerText;
+        if (navigator.clipboard) {
+            navigator.clipboard.writeText(command).then(() => {
+                const btn = document.querySelector('#first-visit-modal .copy-btn');
+                const originalText = btn.innerText;
+                btn.innerText = 'Copied!';
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                }, 2000);
+            }).catch(err => {
+                console.error('AlphaToe: Failed to copy text: ', err);
+            });
+        } else {
+            console.warn('AlphaToe: Clipboard API not available');
+            alert('Clipboard API not available. Please copy manually.');
+        }
+    }
+
+    function initFirstVisit() {
+        try {
+            console.log('AlphaToe: Checking first visit status...');
+            const visited = localStorage.getItem('alphaToeVisited');
+            console.log('AlphaToe: visited status raw value:', visited);
+            
+            // Check if visited is NOT 'true' (handles null, 'false', undefined, etc.)
+            if (visited !== 'true') {
+                console.log('AlphaToe: User has not visited (or not confirmed), showing modal');
+                showFirstVisitModal();
+            } else {
+                console.log('AlphaToe: User has already visited');
+            }
+        } catch (e) {
+            console.error('AlphaToe: Error checking first visit status', e);
+            showFirstVisitModal();
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initFirstVisit);
+    } else {
+        initFirstVisit();
+    }
+    """
+    soup.body.append(fv_script)
 
     # Write modified HTML
     with open(html_path, "w", encoding="utf-8") as f:
