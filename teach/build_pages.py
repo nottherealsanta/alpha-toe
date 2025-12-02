@@ -743,7 +743,7 @@ main {
  .theme-dark {
      --color-white: #ffffff;
      --bg: #141519;
-     --text: #e6edf3;
+     --text: #ffffff;
      --text-lite: #8b949e;
      --accent: #58a6ff;
      --cell-input-bg: #171A23;
