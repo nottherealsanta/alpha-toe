@@ -961,6 +961,7 @@ main {
 
  .side-by-side-container .jp-RenderedMarkdown {
      width: 100%;
+     max-width: 100% !important;
      margin-right: 0;
  }
 
