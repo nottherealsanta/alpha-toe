@@ -16,3 +16,5 @@ node_modules
 GEMINI.md
 .DS_Store
 teach/pages/
+teach/notebooks/training_and_learning.ipynb
+teach/notebooks/neural_network.ipynb
