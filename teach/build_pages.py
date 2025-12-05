@@ -67,8 +67,10 @@ def add_thebe_core_to_html(html_path, notebook_path):
             crossorigin="anonymous",
         )
     )
-    gf_href = "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap"
+    gf_href = "https://fonts.googleapis.com/css2?family=Fira+Code:wght@300..700&family=Lora:ital,wght@0,400..700;1,400..700&display=swap"
     soup.head.append(soup.new_tag("link", href=gf_href, rel="stylesheet"))
+    # Add SF Pro Display font
+    soup.head.append(soup.new_tag("link", href="https://fonts.cdnfonts.com/css/sf-pro-display", rel="stylesheet"))
 
     # Add RequireJS for Jupyter widget support
     require_script = soup.new_tag(
@@ -306,7 +308,7 @@ pre, code, .thebe-source pre, .cm-editor, .cm-content, .CodeMirror {
 }
 
 body, .notebook, .container {
-    font-family: 'Noto Sans', Arial, sans-serif !important;
+    font-family: 'SF Pro Display', Arial, sans-serif !important;
 }
 
 /* Side-by-side layout */
@@ -834,18 +836,18 @@ display: none;
     # Page layout
     page_style = soup.new_tag("style")
     page_style.string = """
-body {
-    padding-left: 0;
-    box-sizing: border-box;
-}
+ body {
+     padding-left: 0;
+     box-sizing: border-box;
+     font-family: 'SF Pro Display', Arial, sans-serif !important;
+ }
 
-.notebook, .container {
-    max-width: none;
-    margin-left: 0;
-    margin-right: auto;
-}
-
-main {
+ .notebook, .container {
+     max-width: none;
+     margin-left: 0;
+     margin-right: auto;
+     font-family: 'SF Pro Display', Arial, sans-serif !important;
+ }main {
     width: 60%;
     margin-left: auto;
     margin-right: auto;
@@ -1005,8 +1007,9 @@ main {
  }
 
  .jp-RenderedMarkdown > p, li {
-     font-size: 16px;
+     font-size: 18px;
      line-height: 1.4;
+     font-family: 'SF Pro Display', Arial, sans-serif !important;
  }
 
  .jp-Cell-inputArea {
