@@ -1608,6 +1608,7 @@ function initializeThebe() {
             }
         }
         
+        // Handle hidden code placeholders
         document.querySelectorAll('.code-hidden-placeholder').forEach(item => {
             item.addEventListener('click', event => {
                 var parent = item.parentElement;
@@ -1620,6 +1621,165 @@ function initializeThebe() {
         });
     });
     """
+    soup.body.append(modal_script)
+
+    # --- Table of Contents Implementation ---
+    
+    # 1. CSS for TOC
+    toc_style = soup.new_tag("style")
+    toc_style.string = """
+    /* TOC Sidebar Styles */
+    #toc-sidebar {
+        position: fixed;
+        left: 2rem;
+        top: 100px;
+        width: 250px;
+        max-height: calc(100vh - 120px);
+        overflow-y: auto;
+        padding-right: 1rem;
+        display: none; /* Hidden by default on small screens */
+        font-family: 'Lora', serif;
+        scrollbar-width: thin;
+        scrollbar-color: var(--text-lite) transparent;
+        z-index: 100;
+    }
+
+    /* Show on large screens */
+    @media (min-width: 1400px) {
+        #toc-sidebar {
+            display: block;
+        }
+        main {
+            /* Keep main centered but allow space for TOC */
+        }
+    }
+
+    #toc-sidebar ul {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        border-left: 2px solid var(--text-lite);
+    }
+
+    #toc-sidebar li {
+        margin: 0;
+    }
+
+    #toc-sidebar a {
+        display: block;
+        padding: 6px 0 6px 16px;
+        text-decoration: none;
+        color: var(--text-lite);
+        font-size: 13px;
+        line-height: 1.4;
+        transition: all 0.2s ease;
+        border-left: 2px solid transparent;
+        margin-left: -2px; /* Overlap border */
+        font-family: 'Lora', serif;
+    }
+
+    #toc-sidebar a:hover {
+        color: var(--text);
+    }
+
+    #toc-sidebar a.active {
+        color: var(--accent);
+        border-left-color: var(--accent);
+        font-weight: 500;
+    }
+    
+    /* Indent based on nesting */
+    #toc-sidebar .toc-h3 {
+        padding-left: 28px;
+    }
+    
+    #toc-sidebar::-webkit-scrollbar {
+        width: 4px;
+    }
+    #toc-sidebar::-webkit-scrollbar-thumb {
+        background-color: var(--text-lite);
+        border-radius: 4px;
+    }
+    """
+    soup.head.append(toc_style)
+
+    # 2. Build TOC HTML
+    toc_nav = soup.new_tag("nav")
+    toc_nav["id"] = "toc-sidebar"
+    
+    toc_ul = soup.new_tag("ul")
+    
+    headings = soup.find_all(["h1", "h2", "h3"])
+    if headings:
+        for tag in headings:
+            if "id" not in tag.attrs:
+                continue
+                
+            li = soup.new_tag("li")
+            a = soup.new_tag("a")
+            a["href"] = "#" + tag["id"]
+            
+            clean_text = ""
+            for child in tag.children:
+                if child.name == "span":
+                     clean_text += child.get_text()
+                elif child.name is None:
+                     clean_text += str(child)
+            
+            if not clean_text:
+                clean_text = tag.get_text().replace("#", "").strip()
+
+            a.string = clean_text.strip()
+            
+            if tag.name == "h3":
+                a["class"] = "toc-h3"
+            elif tag.name == "h2":
+                a["class"] = "toc-h2"
+            else:
+                a["class"] = "toc-h1"
+                
+            li.append(a)
+            toc_ul.append(li)
+            
+        toc_nav.append(toc_ul)
+        soup.body.append(toc_nav)
+
+    # 3. JS for Active State
+    toc_script = soup.new_tag("script")
+    toc_script.string = """
+    document.addEventListener("DOMContentLoaded", function() {
+        const observerOptions = {
+            root: null,
+            rootMargin: '0px 0px -80% 0px', // Trigger when top of section acts active
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    if (id) {
+                        document.querySelectorAll('#toc-sidebar a').forEach(link => {
+                            link.classList.remove('active');
+                        });
+                        
+                        const activeLink = document.querySelector(`#toc-sidebar a[href="#${id}"]`);
+                        if (activeLink) {
+                            activeLink.classList.add('active');
+                            activeLink.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                        }
+                    }
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('h1[id], h2[id], h3[id]').forEach(section => {
+            observer.observe(section);
+        });
+    });
+    """
+    soup.body.append(toc_script)
+
     soup.body.append(modal_script)
 
     # First Visit Modal JS
