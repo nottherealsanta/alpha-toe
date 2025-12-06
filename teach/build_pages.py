@@ -1209,6 +1209,13 @@ function initializeThebe() {
         <button id="connect-button">Connect</button>
         <button id="run-all-button" disabled>Run All</button>
         <button id="restart-button" disabled>Restart</button>
+        <button id="help-button" class="theme-toggle-btn" title="Help">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+        </button>
         <button id="theme-toggle-button" class="theme-toggle-btn" title="Toggle theme">
             <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <circle cx="12" cy="12" r="5"></circle>
@@ -1233,6 +1240,7 @@ function initializeThebe() {
     const connectButton = document.getElementById('connect-button');
     const runAllButton = document.getElementById('run-all-button');
     const restartButton = document.getElementById('restart-button');
+    const helpButton = document.getElementById('help-button');
     const themeToggleButton = document.getElementById('theme-toggle-button');
 
     // Update theme toggle icon based on current theme
@@ -1247,6 +1255,17 @@ function initializeThebe() {
         window.toggleSiteTheme();
         updateThemeIcon();
     });
+
+    // Help button handler
+    if (helpButton) {
+        helpButton.addEventListener('click', function() {
+            if (typeof showFirstVisitModal === 'function') {
+                showFirstVisitModal();
+            } else {
+                console.warn('AlphaToe: showFirstVisitModal not found');
+            }
+        });
+    }
 
 
     // Connect button handler
@@ -1647,6 +1666,14 @@ function initializeThebe() {
             alert('Clipboard API not available. Please copy manually.');
         }
     }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('first-visit-modal');
+        if (modal && event.target === modal) {
+            closeFirstVisitModal();
+        }
+    });
 
     function initFirstVisit() {
         try {
