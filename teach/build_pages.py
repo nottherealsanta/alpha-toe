@@ -150,7 +150,11 @@ def add_thebe_core_to_html(html_path, notebook_path):
 
         # Create wrapper div
         cell_wrapper = soup.new_tag("div")
-        cell_wrapper["class"] = "thebe-cell"
+        # cell_wrapper["class"] = "thebe-cell" # Changed to list for easier appending
+        cell_classes = ["thebe-cell"]
+        if output_only:
+            cell_classes.append("is-output-only")
+        cell_wrapper["class"] = cell_classes
         cell_wrapper["data-cell-id"] = cell_id
 
         # Create source container
@@ -456,6 +460,11 @@ body, .notebook, .container {
 
 .thebe-status-indicator.connecting {
     background: #ff9800;
+    animation: pulse 1.5s infinite;
+}
+
+.thebe-status-indicator.running {
+    background: #2196f3;
     animation: pulse 1.5s infinite;
 }
 
@@ -1341,6 +1350,11 @@ function initializeThebe() {
             // Get code blocks from the page
             codeBlocks = [];
             document.querySelectorAll('.thebe-cell').forEach((cell, index) => {
+                // Skip output-only cells
+                if (cell.classList.contains('is-output-only')) {
+                    return;
+                }
+
                 const sourceDiv = cell.querySelector('.thebe-source');
                 let sourceCode = '';
                 
@@ -1380,7 +1394,7 @@ function initializeThebe() {
             });
 
             statusIndicator.className = 'thebe-status-indicator connected';
-            statusText.textContent = 'Connected';
+            statusText.textContent = 'Ready';
             connectButton.textContent = 'Connected';
             runAllButton.disabled = false;
             restartButton.disabled = false;
@@ -1413,9 +1427,22 @@ function initializeThebe() {
     });
 
     // Run all button handler
-    runAllButton.addEventListener('click', function() {
+    runAllButton.addEventListener('click', async function() {
         if (notebook) {
-            notebook.executeAll();
+            const originalStatusText = statusText.textContent;
+            const originalStatusClass = statusIndicator.className;
+            
+            statusIndicator.className = 'thebe-status-indicator running';
+            statusText.textContent = 'Running...';
+            
+            try {
+                await notebook.executeAll();
+            } catch (err) {
+                console.error('Run all error:', err);
+            } finally {
+                statusIndicator.className = 'thebe-status-indicator connected'; // Assume connected if done, or original? Safe to assume connected.
+                statusText.textContent = 'Ready';
+            }
         }
     });
 
@@ -1499,12 +1526,18 @@ function initializeThebe() {
         if (!notebook) return;
 
         const cellId = `cell-${index}`;
+        
+        statusIndicator.className = 'thebe-status-indicator running';
+        statusText.textContent = 'Running...';
 
         try {
             // Execute the specific cell (source is already updated via input event)
             await notebook.executeOnly(cellId);
         } catch (error) {
             console.error('Execution error:', error);
+        } finally {
+             statusIndicator.className = 'thebe-status-indicator connected';
+             statusText.textContent = 'Ready';
         }
     }
 }
