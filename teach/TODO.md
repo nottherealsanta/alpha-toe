@@ -6,3 +6,4 @@
 - [ ] another cell tag for "show-output-after-run"
 - [ ] take aways from the video "self learning systems" by demis 
 - [ ] relation to bayesian priors?
+- [ ] tree persistance across moves / subtree reuse
