@@ -9,4 +9,4 @@
 - [ ] relation to bayesian priors?
 - [x] tree persistance across moves / subtree reuse
 - [ ] Relation to "Thinking, Fast and Slow"
-- [ ] 
+- [ ] add loss curve plotting to self-play notebook
