@@ -2,8 +2,11 @@
 - [ ] Add "Start here" notebook: "start here"->"mcts"->"neural nets"->"self play"->"training"
 - [ ] in "start here", advice user that because of the circular dependencies of mcts, neural nets, self play they may need to revisit notebooks
 - [ ] read only code cells
-- [ ] client cache to see first time viewers, to show them welcome modal with instructions
+- [x] client cache to see first time viewers, to show them welcome modal with instructions
 - [ ] another cell tag for "show-output-after-run"
+- [ ] buttons to add new code cells
 - [ ] take aways from the video "self learning systems" by demis 
 - [ ] relation to bayesian priors?
-- [ ] tree persistance across moves / subtree reuse
+- [x] tree persistance across moves / subtree reuse
+- [ ] Relation to "Thinking, Fast and Slow"
+- [ ] 
