@@ -139,6 +139,7 @@ def add_thebe_core_to_html(html_path, notebook_path):
         hide_input = "celltag_hide-input" in classes
         show_output = "celltag_show-output" in classes
         output_only = "celltag_output-only" in classes
+        read_only = "celltag_read-only" in classes
 
         # Find the input block (highlight div)
         input_div = cell.find("div", class_="highlight")
@@ -154,6 +155,8 @@ def add_thebe_core_to_html(html_path, notebook_path):
         cell_classes = ["thebe-cell"]
         if output_only:
             cell_classes.append("is-output-only")
+        if read_only:
+            cell_classes.append("is-read-only")
         cell_wrapper["class"] = cell_classes
         cell_wrapper["data-cell-id"] = cell_id
 
@@ -177,7 +180,7 @@ def add_thebe_core_to_html(html_path, notebook_path):
         source_container.append(source_pre)
 
         # Add run button
-        if not output_only:
+        if not output_only and not read_only:
             run_button = soup.new_tag("button")
             run_button["class"] = "cell-run-button"
             svg = soup.new_tag("svg")
@@ -1354,6 +1357,11 @@ function initializeThebe() {
                 if (cell.classList.contains('is-output-only')) {
                     return;
                 }
+                
+                // Skip read-only cells for execution list
+                if (cell.classList.contains('is-read-only')) {
+                    return;
+                }
 
                 const sourceDiv = cell.querySelector('.thebe-source');
                 let sourceCode = '';
@@ -1460,10 +1468,12 @@ function initializeThebe() {
                     sourceDiv.innerHTML = ''; // Clear the pre element
 
                     // Initialize CodeMirror
+                    const isReadOnly = cell.classList.contains('is-read-only');
                     const cm = CodeMirror(sourceDiv, {
                         value: codeContent,
                         mode: "python",
                         theme: "neo",
+                        readOnly: isReadOnly ? "nocursor" : false, 
                         lineNumbers: false,
                         viewportMargin: Infinity,
                         scrollbarStyle: "null",
