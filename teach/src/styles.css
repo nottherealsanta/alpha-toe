@@ -263,19 +263,26 @@ body {
 
 /* ===== Hero Options ===== */
 .hero-options {
-  background: rgba(255, 255, 255, 0.108);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  position: relative;
   padding: 120px 120px;
   border-radius: 24px;
   display: flex;
   flex-direction: column;
   gap: 14px;
   min-width: 300px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
-  mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.709) 50%, transparent 80%, transparent 100%);
   z-index: 10;
+}
+
+.hero-options::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.108);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.709) 50%, transparent 80%, transparent 100%);
+  z-index: -1;
 }
 
 .hero-options a {
@@ -948,4 +955,172 @@ td:first-child {
 
 .cell-highlight.visible {
   display: block;
+}
+
+/* ===== Mobile & Responsive Styles ===== */
+@media (max-width: 900px) {
+  #hero {
+    height: auto;
+    padding: 80px 20px;
+    justify-content: flex-start;
+  }
+
+  .hero-content {
+    width: 100%;
+    height: auto;
+    max-width: 500px;
+    margin-bottom: 40px;
+    border-radius: 24px;
+    mask-image: none;
+    -webkit-mask-image: none;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(12px);
+  }
+
+  #hero h1 {
+    font-size: 4.5rem;
+  }
+
+  .hero-options {
+    padding: 0px;
+    width: 100%;
+    max-width: 400px;
+    font-size: 2rem;
+    /* slightly more opaque on mobile for readability */
+  }
+
+  .hero-option {
+    padding: 0px;
+  }
+
+  #boards {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  canvas.board {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+}
+
+@media (max-width: 600px) {
+
+  /* Global adjustments */
+  main {
+    padding: 40px 16px;
+  }
+
+  .snap-section {
+    padding: 40px 16px;
+    min-height: auto;
+    /* Allow scrolling on small screens */
+  }
+
+  /* Hero Section */
+  #hero h1 {
+    font-size: 2.5rem;
+  }
+
+  #hero .subtitle {
+    font-size: 1.2rem;
+  }
+
+  .hero-options {
+    padding: 24px;
+    border-radius: 16px;
+  }
+
+  .hero-option {
+    width: 100%;
+    padding: 12px 16px;
+  }
+
+  .hero-option p {
+    font-size: 1.5rem;
+  }
+
+  /* Game Board Section */
+  .intro-container {
+    flex-direction: column;
+    gap: 20px;
+    text-align: center;
+  }
+
+  .intro-text {
+    text-align: center;
+  }
+
+  #qubic-game-board h2 {
+    font-size: 2rem;
+  }
+
+  #qubic-game-board h3 {
+    font-size: 1.5rem;
+  }
+
+  #qubic-animation {
+    width: 100%;
+    max-width: 200px;
+    height: 200px;
+    margin: 0 auto;
+  }
+
+  /* Game Boards - 2x2 grid even on small mobile */
+  #boards {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  /* Make sure canvas doesn't overflow */
+  canvas.board {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  /* Controls */
+  .controls {
+    grid-template-columns: 1fr;
+  }
+
+  /* Parameters */
+  .parameters-section {
+    width: 100%;
+    margin-top: 24px;
+    background: var(--panel);
+    padding: 16px;
+    border: 1px solid var(--border);
+  }
+
+  /* UI Elements */
+  #game-container {
+    flex-direction: column;
+  }
+
+  #boards-wrap {
+    width: 100%;
+    padding: 10px;
+    /* Reduce padding to save space */
+  }
+
+  .row {
+    gap: 4px;
+  }
+
+  #aiStatus {
+    min-width: 100px;
+    font-size: 12px;
+  }
+
+  /* Ensure tooltip on mobile looks good (overrides inline styles from JS if needed, or complements them) */
+  .cell-tooltip {
+    z-index: 2000;
+
+    /* Ensure on top of everything */
+    background: var(--bg);
+    /* Ensure solid background */
+    border-top: 2px solid var(--accent);
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.1);
+  }
 }

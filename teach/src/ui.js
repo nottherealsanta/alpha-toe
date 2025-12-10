@@ -21,7 +21,7 @@ export function drawBoard(ctx, board, z, visitsPi, winning = null) {
   // Background
   ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--canvas-bg').trim() || '#fff';
   ctx.fillRect(0, 0, SIZE, SIZE);
-  
+
   // Grid lines
   ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--grid').trim() || '#d8dee4';
   ctx.lineWidth = 2;
@@ -35,7 +35,7 @@ export function drawBoard(ctx, board, z, visitsPi, winning = null) {
     ctx.lineTo(SIZE, i * CELL);
     ctx.stroke();
   }
-  
+
   // Heat map (visit probabilities)
   if (visitsPi) {
     for (let y = 0; y < 4; y++) {
@@ -49,7 +49,7 @@ export function drawBoard(ctx, board, z, visitsPi, winning = null) {
       }
     }
   }
-  
+
   // Pieces (X and O)
   ctx.lineWidth = 10;
   for (let y = 0; y < 4; y++) {
@@ -61,7 +61,7 @@ export function drawBoard(ctx, board, z, visitsPi, winning = null) {
       const isWinning = winning && winning.includes(idx);
       const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text').trim() || '#1f2328';
       ctx.strokeStyle = isWinning ? "red" : textColor;
-      
+
       if (val === 1) {
         // Draw X
         ctx.beginPath();
@@ -132,12 +132,12 @@ export function updateStats(root, tau, game, ctxs, drawAllFn) {
     rows.push([child.N, row]);
   }
   rows.sort((x, y) => y[0] - x[0]);
-  
+
   const statsBody = document.getElementById('statsBody');
   if (statsBody) {
     statsBody.innerHTML = rows.slice(0, 16).map(x => x[1]).join("");
   }
-  
+
   const predV = document.getElementById('predV');
   if (predV) {
     predV.textContent = root.children.size ? avgRootQ(root).toFixed(3) : "—";
@@ -164,13 +164,13 @@ export function showGameOver(game, ctxs, drawAllFn) {
   let text = "It's a draw!";
   if (score === 1) text = "You win!";
   else if (score === -1) text = "AI wins!";
-  
+
   const gameOverText = document.getElementById("gameOverText");
   if (gameOverText) gameOverText.textContent = text;
-  
+
   const gameOverOverlay = document.getElementById("gameOverOverlay");
   if (gameOverOverlay) gameOverOverlay.style.display = 'flex';
-  
+
   const winning = game.getWinningLine();
   drawAllFn(ctxs, game.board, null, winning);
 }
@@ -230,20 +230,20 @@ export function showCellTooltip(x, y, z, event, game, isUserRequestedHelp) {
   } else {
     const idx = toIdx(x, y, z);
     const child = currentRootData.children.get(idx);
-    
+
     if (!child) {
       content = `<div style="font-family: 'IBM Plex Mono', monospace;">Cell (${x},${y},${z})<br><span style="font-style: italic;">No analysis data</span></div>`;
     } else {
       const parentN = 1 + currentRootData.N;
       const U = child.prior * (Math.sqrt(parentN) / (1 + child.N)) * 1.0;
       const pi = toPiFromVisits(currentRootData, 0.0); // tau=0 for deterministic policy
-      
+
       // Determine context label
       let label = "Previous AI turn";
       if (isUserRequestedHelp && game && game.player === 1) {
         label = "Your help";
       }
-      
+
       content = `<div style="font-family: 'IBM Plex Mono', monospace;"><strong style="font-size: 10px; color: #6e7781;">${label}</strong><br>Cell (${x},${y},${z})<br>
 <table style="font-family: 'IBM Plex Mono', monospace; font-size: 11px; border-collapse: collapse; margin-top: 4px;">
 <tr><td style="padding: 2px 4px;">N</td><td style="padding: 2px 4px; text-align: right;">${child.N}</td></tr>
@@ -257,7 +257,7 @@ export function showCellTooltip(x, y, z, event, game, isUserRequestedHelp) {
 
   tooltip.innerHTML = content;
   tooltip.classList.add('visible');
-  
+
   // Position tooltip and highlight to the right of the hovered cell
   const canvas = event.target;
   const rect = canvas.getBoundingClientRect();
@@ -265,11 +265,7 @@ export function showCellTooltip(x, y, z, event, game, isUserRequestedHelp) {
   const cellHeight = rect.height / 4;
   const cellLeft = x * cellWidth;
   const cellTop = y * cellHeight;
-  
-  // Tooltip to the right of the cell
-  tooltip.style.left = `${rect.left + cellLeft + cellWidth }px`;
-  tooltip.style.top = `${rect.top + cellTop}px`;
-  
+
   // Show blue border highlight
   if (highlight) {
     highlight.style.left = `${rect.left + cellLeft}px`;
@@ -277,6 +273,48 @@ export function showCellTooltip(x, y, z, event, game, isUserRequestedHelp) {
     highlight.style.width = `${cellWidth}px`;
     highlight.style.height = `${cellHeight}px`;
     highlight.classList.add('visible');
+  }
+
+  // Smart Tooltip Positioning
+  const isMobile = window.innerWidth <= 600;
+
+  if (isMobile) {
+    // On mobile, show at the bottom of the screen
+    tooltip.style.left = '0';
+    tooltip.style.right = '0';
+    tooltip.style.top = 'auto';
+    tooltip.style.bottom = '0';
+    tooltip.style.width = '100%';
+    tooltip.style.transform = 'none';
+    tooltip.style.borderLeft = 'none';
+    tooltip.style.borderRight = 'none';
+    tooltip.style.borderBottom = 'none';
+    tooltip.style.borderRadius = '0';
+  } else {
+    // Desktop: Try to place to the right
+    const tooltipX = rect.left + cellLeft + cellWidth + 10;
+    const tooltipY = rect.top + cellTop;
+
+    // Check if it fits on the right
+    // We can't know the exact width before rendering, but we can approximate or check after
+    // ideally we set it then check, but for now let's use a simple heuristic or flip if close to edge
+
+    if (tooltipX + 250 > window.innerWidth) { // Assuming ~250px width
+      // Flip to left
+      tooltip.style.left = `${rect.left + cellLeft - 260}px`; // Shift left
+    } else {
+      tooltip.style.left = `${tooltipX}px`;
+    }
+
+    tooltip.style.top = `${tooltipY}px`;
+    // Reset mobile styles
+    tooltip.style.right = 'auto';
+    tooltip.style.bottom = 'auto';
+    tooltip.style.width = 'auto';
+    tooltip.style.borderRadius = ''; // Reset to CSS default
+    tooltip.style.borderLeft = '';
+    tooltip.style.borderRight = '';
+    tooltip.style.borderBottom = '';
   }
 }
 
