@@ -9,6 +9,7 @@ export default defineConfig({
         mcts: resolve(__dirname, 'pages/mcts.html'),
         'nn': resolve(__dirname, 'pages/nn.html'),
         'self-play': resolve(__dirname, 'pages/self-play.html'),
+        'start-here': resolve(__dirname, 'pages/start-here.html'),
       },
     },
   },
