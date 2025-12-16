@@ -5,19 +5,6 @@
 This project includes a high-performance training pipeline, a CLI for interacting with models, and a modern web-based interactive explainer.
 
 **[Live Demo](https://alpha-toe-zero.nottherealsanta.com)** 
------
-
-## 🌟 Key Features
-
-  * **Dual Game Support:** Full implementations for both 3x3 Tic-Tac-Toe and complex 4x4x4 Qubic.
-  * **AlphaZero Core:** Combines Monte Carlo Tree Search (MCTS) with ResNet-based deep neural networks.
-  * **Self-Play Training:** Generates its own training data using MCTS to improve iteratively.
-  * **Advanced Techniques:**
-      * **Data Augmentation:** Exploits 8 dihedral symmetries (2D) and cube symmetries (3D) to multiply training efficiency.
-      * **Dirichlet Noise:** Adds exploration noise to the root node to prevent local optima.
-      * **Temperature Annealing:** Dynamic control of exploration vs. exploitation during game generation.
-  * **Parallel Processing:** Uses multiprocessing to speed up self-play game generation.
-  * **Interactive Web App:** A React/Vite web application to visualize the agent and play against it in 3D.
 
 -----
 
