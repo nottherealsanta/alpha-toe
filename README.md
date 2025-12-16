@@ -2,6 +2,8 @@
 
 An implementation of DeepMind's AlphaZero algorithm for Tic-Tac-Toe and 4×4×4 Qubic (3D Tic-Tac-Toe). This project combines Monte Carlo Tree Search (MCTS) with deep neural networks for self-play reinforcement learning—no human data required.
 
+See: alpha-toe-zero.nottherealsanta.com
+
 ## Project Structure
 
 ```
@@ -30,8 +32,8 @@ alpha-toe/
 
 ```bash
 # Clone the repository
-git clone https://github.com/nottherealsanta/alpha-toe.git
-cd alpha-toe
+git clone https://github.com/nottherealsanta/alpha-toe-zero.git
+cd alpha-toe-zero
 
 # Install dependencies (requires Python 3.11+)
 pip install -e .

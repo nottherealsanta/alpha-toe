@@ -1,4 +1,4 @@
-# AlphaToe - 4×4×4 Qubic MCTS Explainer
+# AlphaToeZero 
 
 An interactive web application that demonstrates AlphaZero-style reinforcement learning for 4×4×4 Qubic (3D Tic-Tac-Toe). Built with vanilla JavaScript and ONNX Runtime, this application allows users to play against a trained neural network and visualize the Monte Carlo Tree Search (MCTS) decision-making process in real-time.
 

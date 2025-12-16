@@ -1605,7 +1605,7 @@ function initializeThebe() {
     fv_actions["class"] = "modal-actions"
     
     fv_gh_link = soup.new_tag("a")
-    fv_gh_link["href"] = "https://github.com/nottherealsanta/alpha-toe"
+    fv_gh_link["href"] = "https://github.com/nottherealsanta/alpha-toe-zero"
     fv_gh_link["class"] = "github-link"
     fv_gh_link["target"] = "_blank"
     fv_gh_link.string = "View on GitHub"
