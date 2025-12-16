@@ -1582,7 +1582,7 @@ function initializeThebe() {
     fv_content["class"] = "modal-content"
     
     fv_h2 = soup.new_tag("h2")
-    fv_h2.string = "Welcome to Alpha Toe!"
+    fv_h2.string = "Welcome to Alpha Toe Zero!"
     
     fv_p1 = soup.new_tag("p")
     fv_p1.string = "To interact with the code and run simulations, you need to run a local Jupyter server. Please run the following command in your terminal:"
