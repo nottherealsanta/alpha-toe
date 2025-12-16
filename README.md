@@ -1,67 +1,82 @@
 # Alpha-Toe-Zero
 
-An implementation of DeepMind's AlphaZero algorithm for Tic-Tac-Toe and 4×4×4 Qubic (3D Tic-Tac-Toe). This project combines Monte Carlo Tree Search (MCTS) with deep neural networks for self-play reinforcement learning—no human data required.
+**Alpha-Toe-Zero** is a clean, educational implementation of DeepMind's [AlphaZero](https://www.google.com/search?q=https://deepmind.com/blog/article/alphazero-shedding-new-light-on-chess-shogi-and-go) algorithm. It masters **Tic-Tac-Toe (2D)** and **4x4x4 3D Tic-Tac-Toe** entirely through self-play reinforcement learning, starting with zero human knowledge.
 
-See: alpha-toe-zero.nottherealsanta.com
+This project includes a high-performance training pipeline, a CLI for interacting with models, and a modern web-based interactive explainer.
 
-## Project Structure
+**[Live Demo](https://www.google.com/search?q=https://alpha-toe-zero.nottherealsanta.com)** 
+-----
 
-```
-alpha-toe/
-├── 2d/                  # 3×3 Tic-Tac-Toe implementation
-│   ├── main.py          # Training pipeline & AlphaZero core
-│   ├── play.py          # Interactive CLI game
-│   ├── tournament.py    # Elo tournament between models
-│   └── export_onnx.py   # Export models to ONNX format
-├── 3d/                  # 4×4×4 Qubic implementation
-│   ├── qubic.py         # 3D AlphaZero with 3D conv net
-│   └── qubic_export.py  # Export 3D models to ONNX
-├── teach/               # Interactive web application
-│   ├── src/             # JavaScript modules (game, MCTS, UI)
-│   └── public/          # ONNX models for browser inference
-├── docs/                # Documentation & notebooks
-│   ├── TECHNICAL_DOCUMENTATION.md
-│   ├── report.md
-│   └── *.ipynb          # Interactive explainers
-└── models/              # Trained model checkpoints
-```
+## 🌟 Key Features
 
-## Quick Start
+  * **Dual Game Support:** Full implementations for both 3x3 Tic-Tac-Toe and complex 4x4x4 Qubic.
+  * **AlphaZero Core:** Combines Monte Carlo Tree Search (MCTS) with ResNet-based deep neural networks.
+  * **Self-Play Training:** Generates its own training data using MCTS to improve iteratively.
+  * **Advanced Techniques:**
+      * **Data Augmentation:** Exploits 8 dihedral symmetries (2D) and cube symmetries (3D) to multiply training efficiency.
+      * **Dirichlet Noise:** Adds exploration noise to the root node to prevent local optima.
+      * **Temperature Annealing:** Dynamic control of exploration vs. exploitation during game generation.
+  * **Parallel Processing:** Uses multiprocessing to speed up self-play game generation.
+  * **Interactive Web App:** A React/Vite web application to visualize the agent and play against it in 3D.
 
-### Installation
+-----
+
+## Installation
+
+Requires **Python 3.11+**.
+
+### 1\. Clone the repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/nottherealsanta/alpha-toe-zero.git
 cd alpha-toe-zero
+```
 
-# Install dependencies (requires Python 3.11+)
+### 2\. Install Dependencies
+
+You can use standard `pip` or `uv` for faster dependency management.
+
+```bash
+# Using pip
 pip install -e .
-# or with uv
+
+# Using uv (Recommended)
 uv sync
 ```
 
-### Train a Model
+-----
+
+## Usage
+
+The project is divided into 2D (Tic-Tac-Toe) and 3D (Qubic) modules.
+
+### Training a Model
+
+The training pipeline runs self-play games, trains the neural net, and evaluates progress.
 
 ```bash
-# Train 3×3 Tic-Tac-Toe
+# Train 3x3 Tic-Tac-Toe agent
 cd 2d
 python main.py
 
-# Train 4×4×4 Qubic
+# Train 4x4x4 Qubic agent
 cd 3d
 python qubic.py
 ```
 
-### Play Against the AI
+### Play Against the AI (CLI)
+
+Once you have a trained model (check the `models/` directory), you can challenge it.
 
 ```bash
-# CLI game against trained model
 cd 2d
+# Replace with your specific checkpoint path
 python play.py --model-path ../models/alphazero_iter_40.pth
 ```
 
-### Run the Web Demo
+### Run the Web Interface
+
+The `teach/` directory contains a full web application for playing the 3D game and visualizing the network.
 
 ```bash
 cd teach
@@ -69,46 +84,11 @@ npm install
 npm run dev
 ```
 
-Then open http://localhost:5173 to play 4×4×4 Qubic against the AI in your browser.
+Open `http://localhost:5173` in your browser.
 
-## How It Works
+### Run a Tournament
 
-### AlphaZero Algorithm
-
-The implementation follows the AlphaZero approach:
-
-1. **Neural Network** - A ResNet predicts:
-   - **Value head**: Expected game outcome (-1 to +1)
-   - **Policy head**: Move probabilities for each action
-
-2. **Monte Carlo Tree Search** - Guided by the neural network:
-   - Selection via PUCT formula balancing exploration/exploitation
-   - Expansion using policy network priors
-   - Backup propagating values through the tree
-
-3. **Self-Play Training**:
-   - Generate games using MCTS
-   - Train network on (state, policy, value) tuples
-   - Repeat with improved network
-
-### Key Hyperparameters
-
-| Parameter | 3×3 Value | 4×4×4 Value | Description |
-|-----------|-----------|-------------|-------------|
-| `N_SIMULATIONS` | 100 | 100 | MCTS simulations per move |
-| `N_GAMES` | 200 | 64 | Self-play games per iteration |
-| `C_PUCT` | 1.0 | 1.0 | Exploration constant |
-| `NUM_RES_BLOCKS` | 4 | 4 | Residual blocks in network |
-| `REPLAY_CAPACITY` | 50,000 | 200,000 | Training sample buffer |
-
-### Data Augmentation
-
-- **3×3**: 8 dihedral symmetries (rotations + reflections)
-- **4×4×4**: 24 or 48 cube symmetries (rotations ± reflections)
-
-## Tournament & Evaluation
-
-Compare models via Elo-rated round-robin tournaments:
+Compare different iterations of your model to measure improvement using Elo ratings.
 
 ```bash
 cd 2d
@@ -118,8 +98,64 @@ python tournament.py \
     --mcts-simulations 200
 ```
 
-Results are saved to CSV for analysis.
+-----
 
-Based on the AlphaZero algorithm by DeepMind:
-- [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)
-- [Mastering the game of Go without human knowledge](https://www.nature.com/articles/nature24270)
+## System Architecture
+
+The system follows the standard AlphaZero loop, iterating between generating data via self-play and improving the neural network.
+
+```mermaid
+graph LR
+    subgraph "Self-Play Phase"
+        A[MCTS Search] -->|Generates| B[Game History]
+        B -->|Augmentation| C[Training Buffer]
+    end
+    
+    subgraph "Training Phase"
+        C -->|Sample Batch| D[Neural Network]
+        D -->|Update Weights| D
+        D -->|New Checkpoint| A
+    end
+```
+
+### Neural Network (ResNet)
+
+  * **Input:** The board state encoded into binary planes (Current Player, Opponent).
+  * **Backbone:** 4 Residual Blocks with Batch Normalization.
+  * **Heads:**
+      * **Value Head:** Predicts game outcome `[-1, 1]`.
+      * **Policy Head:** Predicts probability distribution over all valid moves.
+
+For a deep dive into the implementation details, see [TECHNICAL\_DOCUMENTATION.md](https://www.google.com/search?q=docs/TECHNICAL_DOCUMENTATION.md).
+
+-----
+
+## Project Structure
+
+```text
+alpha-toe/
+├── 2d/                  # 3x3 Tic-Tac-Toe Engine
+│   ├── main.py          # Training entry point
+│   ├── play.py          # CLI game interface
+│   ├── tournament.py    # Elo rating system
+│   └── export_onnx.py   # Model exporter
+├── 3d/                  # 4x4x4 Qubic Engine
+│   ├── qubic.py         # 3D training pipeline
+│   └── qubic_export.py  # 3D model exporter
+├── teach/               # Interactive Web App (React/Vite)
+│   ├── src/             # Frontend logic (Game, UI, MCTS)
+│   └── public/assets/   # ONNX models for browser inference
+├── docs/                # Documentation
+│   ├── TECHNICAL_DOCUMENTATION.md  # Detailed architecture docs
+│   └── *.ipynb          # Jupyter notebooks for concepts
+└── models/              # Checkpoints saved during training
+```
+
+
+
+## References
+
+This project is based on the following groundbreaking papers:
+
+1.  **AlphaZero:** [Mastering Chess and Shogi by Self-Play with a General Reinforcement Learning Algorithm](https://arxiv.org/abs/1712.01815)
+2.  **AlphaGo Zero:** [Mastering the game of Go without human knowledge](https://www.nature.com/articles/nature24270)
