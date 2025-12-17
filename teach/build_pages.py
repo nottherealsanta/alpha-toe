@@ -1199,7 +1199,7 @@ function initializeThebe() {
     const LOCAL_OPTIONS = {
         serverSettings: {
             baseUrl: 'http://localhost:8888',
-            token: 'test-secret',
+            token: '_2Vk7^D9sIsXCyu%"(Y(D~{aVL[d]',
         },
         kernelOptions: {
             kernelName: 'python3',
@@ -1592,7 +1592,7 @@ function initializeThebe() {
     
     fv_pre = soup.new_tag("pre")
     fv_pre["id"] = "server-command"
-    fv_pre.string = """uvx -p 3.11 -w torch -w numpy jupyter lab --NotebookApp.token=test-secret --NotebookApp.allow_origin='*' --no-browser"""
+    fv_pre.string = """uvx -p 3.11 -w torch -w numpy jupyter lab --NotebookApp.token=_2Vk7^D9sIsXCyu%"(Y(D~{aVL[d] --NotebookApp.allow_origin='https://alpha-toe-zero.nottherealsanta.com/' --no-browser"""
     
     fv_copy_btn = soup.new_tag("button")
     fv_copy_btn["class"] = "copy-btn"

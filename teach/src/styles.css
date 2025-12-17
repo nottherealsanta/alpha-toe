@@ -215,7 +215,7 @@ body {
   position: relative;
   z-index: 1;
   width: 1100px;
-  height: 500px;
+  height: 200px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -283,6 +283,12 @@ body {
   -webkit-backdrop-filter: blur(16px);
   mask-image: radial-gradient(circle, black 0%, rgba(0, 0, 0, 0.709) 50%, transparent 80%, transparent 100%);
   z-index: -1;
+}
+
+@media (prefers-color-scheme: dark) {
+  .hero-options::before {
+    background: rgba(0, 0, 0, 0.1);
+  }
 }
 
 .hero-options a {
