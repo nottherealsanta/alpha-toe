@@ -1221,6 +1221,13 @@ function initializeThebe() {
         <button id="connect-button">Connect</button>
         <button id="run-all-button" disabled>Run All</button>
         <button id="restart-button" disabled>Restart</button>
+        <button id="download-button" class="theme-toggle-btn" title="Download .ipynb">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+        </button>
         <button id="help-button" class="theme-toggle-btn" title="Help">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="12" cy="12" r="10"></circle>
@@ -1252,6 +1259,7 @@ function initializeThebe() {
     const connectButton = document.getElementById('connect-button');
     const runAllButton = document.getElementById('run-all-button');
     const restartButton = document.getElementById('restart-button');
+    const downloadButton = document.getElementById('download-button');
     const helpButton = document.getElementById('help-button');
     const themeToggleButton = document.getElementById('theme-toggle-button');
 
@@ -1267,6 +1275,118 @@ function initializeThebe() {
         window.toggleSiteTheme();
         updateThemeIcon();
     });
+
+    // Download button handler
+    if (downloadButton) {
+        downloadButton.addEventListener('click', downloadNotebook);
+    }
+
+    function downloadNotebook() {
+        const notebook = {
+            "metadata": {
+                "kernelspec": {
+                    "display_name": "Python 3",
+                    "language": "python",
+                    "name": "python3"
+                },
+                "language_info": {
+                    "codemirror_mode": {
+                        "name": "ipython",
+                        "version": 3
+                    },
+                    "file_extension": ".py",
+                    "mimetype": "text/x-python",
+                    "name": "python",
+                    "nbconvert_exporter": "python",
+                    "pygments_lexer": "ipython3",
+                    "version": "3.8.5"
+                }
+            },
+            "nbformat": 4,
+            "nbformat_minor": 4,
+            "cells": []
+        };
+
+        const cells = document.querySelectorAll('.jp-Cell');
+        
+        cells.forEach(cell => {
+            // Skip output-only cells
+            if (cell.classList.contains('celltag_output-only') || cell.querySelector('.is-output-only')) {
+                return;
+            }
+
+            const cellObj = {};
+            const isCode = cell.querySelector('.thebe-cell');
+            
+            if (isCode) {
+                cellObj.cell_type = "code";
+                cellObj.execution_count = null;
+                cellObj.outputs = [];
+                cellObj.metadata = {};
+                
+                // Get source
+                const sourceDiv = cell.querySelector('.thebe-source');
+                let sourceCode = "";
+                if (sourceDiv && sourceDiv.cm) {
+                    sourceCode = sourceDiv.cm.getValue();
+                } else if (sourceDiv) {
+                    sourceCode = sourceDiv.textContent.trim();
+                }
+                
+                // Split into lines for valid ipynb format
+                cellObj.source = sourceCode.split('\\n').map(line => line + '\\n');
+                
+            } else {
+                cellObj.cell_type = "markdown";
+                cellObj.metadata = {};
+                
+                // Get markdown content. 
+                // Since we don't have the raw markdown, we get the HTML content.
+                // It's not perfect but it preserves the content.
+                const innerHTML = cell.innerHTML.trim();
+                // We might want to try to find the inner text container if possible to avoid wrapper divs
+                // But usually .jp-Cell contains the rendered markdown directly or in a wrapper
+                
+                // Let's try to be a bit smarter:
+                const rendered = cell.querySelector('.jp-RenderedMarkdown');
+                if (rendered) {
+                     // We can try to format it slightly or just dump the HTML
+                     // Jupyter accepts HTML in markdown cells
+                     cellObj.source = [rendered.innerHTML];
+                } else {
+                     cellObj.source = [cell.innerHTML];
+                }
+            }
+            
+            notebook.cells.push(cellObj);
+        });
+
+        const jsonStr = JSON.stringify(notebook, null, 2);
+        const blob = new Blob([jsonStr], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        
+        // Derive filename from current page URL
+        let filename = "notebook.ipynb";
+        try {
+            const path = window.location.pathname;
+            const basename = path.split('/').pop();
+            if (basename) {
+                // Remove .html extension if present and add .ipynb
+                filename = basename.replace(/\.html$/, '') + '.ipynb';
+            }
+        } catch (e) {
+            console.warn('Could not derive filename from URL, using default.');
+        }
+
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    }
 
     // Help button handler
     if (helpButton) {
@@ -1589,7 +1709,7 @@ function initializeThebe() {
     fv_p1.append(soup.new_tag("br"))
     fv_p1.append(soup.new_tag("br"))
     warning_strong = soup.new_tag("strong")
-    warning_strong.string = "Note: This setup is currently not secure. I am exploring options to make this more secure."
+    warning_strong.string = "Note: This setup is currently not secure. I am exploring options to make this more secure. You can download the notebook and run it locally if you prefer."
     fv_p1.append(warning_strong)
     
     fv_cmd_box = soup.new_tag("div")
